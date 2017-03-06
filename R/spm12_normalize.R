@@ -12,7 +12,7 @@
 #' @param verbose Print diagnostic messages
 #' @param ... Arguments passed to \code{\link{run_spm12_script}}
 #' @export
-#' @return Result from run_matlab_script
+#' @return List of outptu filenames
 #' @importFrom matlabr rvec_to_matlabcell rvec_to_matlabcell rmat_to_matlab_mat
 spm12_normalize <- function(filename,
                             other.files = NULL,
@@ -34,6 +34,7 @@ spm12_normalize <- function(filename,
   } else {
     other.files = filename
   }
+  other.fnames = other.files
   other.files = rvec_to_matlabcell(other.files, transpose = TRUE)
   # Pasting them together
 
@@ -50,8 +51,13 @@ spm12_normalize <- function(filename,
                           clean = clean,
                           verbose = verbose,
                           ...)
-
-  return(res)
+  if (res != 0) {
+    warning("Result was not zero!")
+  }  
+  L = list(
+    outfiles = file.path(dirname(other.fnames),
+                        paste0("w", basename(other.fnames))))
+  return(L)
 }
 
 

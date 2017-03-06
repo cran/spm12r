@@ -65,7 +65,9 @@ spm12_coregister <- function(fixed,
                           clean = clean,
                           verbose = verbose,
                           ...)
-  stopifnot(res == 0)
+  if (res != 0) {
+    warning("Result was not zero!")
+  }
   ####################
   # Copy outfiles
   ####################
@@ -76,7 +78,7 @@ spm12_coregister <- function(fixed,
     }
   }
 
-  l = list(outfile = moving,
+  l = list(outfile = omoving,
            other.outfiles = other.ofiles)
   return(l)
 }
