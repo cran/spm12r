@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="John Muschelli" />
+
+<meta name="date" content="2018-02-02" />
+
+<title>Preprocessing and First Level Model for Task fMRI</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Preprocessing and First Level Model for Task fMRI</h1>
+<h4 class="author"><em>John Muschelli</em></h4>
+<h4 class="date"><em>2018-02-02</em></h4>
+
+
+
+<div id="acpc-version" class="section level1">
+<h1>ACPC Version</h1>
+</div>
+<div id="overview-of-spm12r-functions" class="section level1">
+<h1>Overview of <code>spm12r</code> functions</h1>
+<p>Requires MATLAB (installs SPM to R library)</p>
+<ul>
+<li><code>spm12_slice_timing</code> - slices are not taken instantaneously</li>
+<li><code>spm12_realign</code> - people move</li>
+<li><code>spm12_coregister</code> - structural imaging is higher resolution</li>
+<li><code>spm12_segment</code> - where’s the gray matter?</li>
+<li><code>spm12_normalize</code> - brains look better in MNI</li>
+<li><code>spm12_smooth</code> - turn that noise down</li>
+</ul>
+</div>
+<div id="data-used" class="section level1">
+<h1>Data used</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(httr)
+url =<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;https://ndownloader.figshare.com/articles/&quot;</span>,
+             <span class="st">&quot;5442298/versions/1&quot;</span>)
+zipfile =<span class="st"> </span><span class="kw">tempfile</span>(<span class="dt">fileext =</span> <span class="st">&quot;.zip&quot;</span>)
+res =<span class="st"> </span><span class="kw">GET</span>(
+  url, 
+  <span class="kw">write_disk</span>(<span class="dt">path =</span> zipfile),
+  if (<span class="kw">interactive</span>()) <span class="kw">progress</span>())
+run_dir =<span class="st"> </span><span class="kw">tempfile</span>()
+if (!<span class="kw">dir.exists</span>(run_dir)) {
+  <span class="kw">dir.create</span>(run_dir)
+}
+out_files =<span class="st"> </span>utils::<span class="kw">unzip</span>(zipfile, <span class="dt">exdir =</span> run_dir)
+<span class="kw">names</span>(out_files) =<span class="st"> </span>neurobase::<span class="kw">nii.stub</span>(
+  out_files, <span class="dt">bn =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<p>We know the repetition time (TR) is 2 seconds for this data. It may be encoded in the NIfTI file itself or come from a parameter file from the scanner. We will drop the first 20 seconds to allow for signal stabilization.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(neurobase)
+##################################
+<span class="co"># Added quick reading of nifti header</span>
+##################################
+oro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;oro.nifti&quot;</span>)
+neuro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;neurobase&quot;</span>)
+if (oro_pkg &lt;<span class="st"> </span><span class="fl">0.8</span> ||<span class="st"> </span>neuro_pkg &lt;<span class="st"> </span><span class="fl">1.22</span>) {
+  get_nifti =<span class="st"> </span>neurobase::check_nifti 
+} else {
+  get_nifti =<span class="st"> </span>neurobase::check_nifti_header
+}
+
+fmri_filename =<span class="st"> </span>out_files[<span class="st">&quot;fmri&quot;</span>]
+t1_fname =<span class="st"> </span>out_files[<span class="st">&quot;anat&quot;</span>]
+tr =<span class="st"> </span><span class="fl">1.8</span> <span class="co"># seconds</span>
+hdr =<span class="st"> </span><span class="kw">get_nifti</span>(fmri_filename) <span class="co"># getting nifti header</span>
+
+nslices =<span class="st"> </span>oro.nifti::<span class="kw">nsli</span>(hdr)
+n_time_points =<span class="st"> </span>oro.nifti::<span class="kw">ntim</span>(hdr)
+time_points =<span class="st"> </span><span class="kw">seq</span>(n_time_points)
+ta =<span class="st"> </span><span class="dv">0</span>
+slice_order =<span class="st"> </span><span class="kw">c</span>(
+  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, 
+  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, 
+  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, 
+  <span class="dv">420</span>, <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>, 
+  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, 
+  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, 
+  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, <span class="dv">420</span>, 
+  <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>)
+ref_slice =<span class="st"> </span><span class="dv">900</span></code></pre></div>
+</div>
+<div id="checking-matlab" class="section level1">
+<h1>Checking MATLAB</h1>
+<p>As SPM requires MATLAB and calls all the functions through the <code>matlabr</code> package, we will have checks in this vignette/workflow that the user has MATLAB. The <code>have_matlab()</code> function returns a logical that is <code>TRUE</code> when <code>matlabr</code> can find MATLAB to run the subsequent commands.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(matlabr)
+<span class="kw">have_matlab</span>()</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<p>If this is not <code>TRUE</code>, almost none of the functionality below will run because it would simply result in errors.</p>
+</div>
+<div id="overall-processing" class="section level1">
+<h1>Overall Processing</h1>
+<p>We will show how to do spatial realignment, slice-timing correction, spatial normalization to the MNI template (2 different ways), and spatial smoothing. Overall, there are many different ways to order these operations, with different options, so this represents just one way to organize a preprocessing pipeline.</p>
+<div id="image-realignment" class="section level2">
+<h2>Image Realignment</h2>
+<p>Realignment is referring to in this case as within-subject registration of the 4D fMRI data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(spm12r)
+####################################
+<span class="co"># Realignment</span>
+####################################
+if (<span class="kw">have_matlab</span>()) {
+  
+  realigned =<span class="st"> </span><span class="kw">spm12_realign</span>( 
+    <span class="dt">filename =</span> fmri_filename,
+    <span class="dt">time_points =</span> time_points,
+    <span class="dt">quality =</span> <span class="fl">0.98</span>, 
+    <span class="dt">separation =</span> <span class="dv">3</span>,
+    <span class="dt">register_to =</span> <span class="st">&quot;mean&quot;</span>,
+    <span class="dt">est_interp =</span> <span class="st">&quot;bspline4&quot;</span>,
+    <span class="dt">reslice_interp =</span> <span class="st">&quot;bspline4&quot;</span>,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>
+  )
+  ################################
+  <span class="co"># reading in the mean image</span>
+  ##########################
+  mean_img =<span class="st"> </span>realigned[[<span class="st">&quot;mean&quot;</span>]]
+  mean_nifti =<span class="st"> </span><span class="kw">readnii</span>(mean_img)
+  
+  rpfile =<span class="st"> </span>realigned[[<span class="st">'rp'</span>]]
+  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)
+}</code></pre></div>
+<pre><code>## # Reslice is all+mean</code></pre>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f116b2e10.m, which calls /tmp/RtmpyDRQSn/file2b4f40ef781.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f116b2e10.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<p>Overall the <code>spm12_realign</code> does the realignment. There is some discussion of performing realignment <strong>before</strong> slice-timing correction because estimation of motion parameters may be skewed after slice-timing correction. We see that the output <code>realigned</code> has the output 4D fMRI data (<code>outfiles</code>), the realignment parameters (<code>rp</code>), voxel-wise mean after realignment (<code>mean</code>), and the matrix of transformations for the 4D series (<code>mat</code>).</p>
+<div id="reading-in-the-rp-file" class="section level3">
+<h3>Reading in the RP file</h3>
+<p>Here we can read in the <code>rp</code> file to show the estiamted parameters. These can be used as regressors in motion correction for further analyses.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">####################################
+<span class="co"># Read in Motion data</span>
+####################################
+if (<span class="kw">have_matlab</span>()) {
+  rpfile =<span class="st"> </span>realigned[[<span class="st">'rp'</span>]]
+  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)
+  <span class="kw">colnames</span>(rp) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;z&quot;</span>, 
+                   <span class="st">&quot;roll&quot;</span>, <span class="st">&quot;pitch&quot;</span>, <span class="st">&quot;yaw&quot;</span>)
+  rp =<span class="st"> </span><span class="kw">as.matrix</span>(rp)
+  <span class="kw">print</span>(<span class="kw">head</span>(rp))
+  <span class="kw">print</span>(<span class="kw">dim</span>(rp))
+}</code></pre></div>
+<pre><code>##                 x           y            z          roll         pitch
+## [1,] 0.0000000000  0.00000000  0.000000000  0.0000000000  0.000000e+00
+## [2,] 0.0048211607 -0.05013463 -0.060077472 -0.0004428566  6.155483e-05
+## [3,] 0.0157221950 -0.04831228  0.049669020 -0.0002809896 -4.321093e-05
+## [4,] 0.0081128381 -0.04362921 -0.086630878 -0.0001192797 -1.334368e-05
+## [5,] 0.0255457440 -0.07977505  0.001169408 -0.0003435793 -1.783017e-04
+## [6,] 0.0007600395 -0.03691525 -0.078877335  0.0000856010 -1.312280e-04
+##                yaw
+## [1,]  0.000000e+00
+## [2,] -1.649043e-05
+## [3,] -1.591068e-04
+## [4,] -9.216786e-05
+## [5,] -6.443807e-05
+## [6,]  5.631540e-06
+## [1] 280   6</code></pre>
+</div>
+</div>
+<div id="slice-timing-correction" class="section level2">
+<h2>Slice-Timing Correction</h2>
+<p>A slice-timing correction does interpolation since each slice was not actually taken at the same time point, but a shifted time point over the course of an entire TR. The correction requires you to input the reference slice (in this case the median, <code>ref_slice</code>), the repetition time (<code>tr</code>), time between the first and the last slice within one scan (<code>ta</code>), and the order the slices were acquired. In our case, it was done in an ascending, contiguous order, so we created the slice order as such. If you used descending or interleaved acquisition, then this must be changed accordingly.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">####################################
+<span class="co"># Slice Timing Correction</span>
+####################################
+if (<span class="kw">have_matlab</span>()) {
+  aimg =<span class="st"> </span><span class="kw">spm12_slice_timing</span>(
+    <span class="dt">filename =</span> realigned[[<span class="st">'outfiles'</span>]],
+    <span class="dt">nslices =</span> nslices,
+    <span class="dt">tr =</span> tr, 
+    <span class="dt">slice_order =</span> slice_order,
+    <span class="dt">time_points =</span> <span class="kw">seq</span>(n_time_points),
+    <span class="dt">ta =</span> ta, 
+    <span class="dt">ref_slice =</span> ref_slice,
+    <span class="dt">prefix =</span> <span class="st">&quot;a&quot;</span>, 
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>, 
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+  <span class="kw">print</span>(aimg)
+}</code></pre></div>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f57f9861e.m, which calls /tmp/RtmpyDRQSn/file2b4f18671f3d.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f57f9861e.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## $spm
+## $spm
+## $spm$temporal
+## $spm$temporal$st
+## $spm$temporal$st$scans
+## [1] &quot;{{'/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,1'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,2'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,3'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,4'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,5'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,6'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,7'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,8'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,9'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,10'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,11'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,12'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,13'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,14'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,15'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,16'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,17'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,18'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,19'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,20'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,21'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,22'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,23'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,24'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,25'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,26'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,27'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,28'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,29'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,30'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,31'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,32'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,33'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,34'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,35'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,36'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,37'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,38'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,39'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,40'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,41'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,42'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,43'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,44'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,45'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,46'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,47'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,48'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,49'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,50'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,51'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,52'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,53'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,54'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,55'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,56'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,57'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,58'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,59'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,60'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,61'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,62'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,63'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,64'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,65'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,66'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,67'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,68'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,69'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,70'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,71'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,72'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,73'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,74'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,75'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,76'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,77'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,78'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,79'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,80'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,81'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,82'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,83'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,84'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,85'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,86'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,87'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,88'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,89'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,90'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,91'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,92'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,93'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,94'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,95'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,96'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,97'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,98'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,99'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,100'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,101'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,102'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,103'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,104'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,105'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,106'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,107'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,108'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,109'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,110'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,111'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,112'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,113'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,114'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,115'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,116'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,117'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,118'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,119'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,120'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,121'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,122'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,123'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,124'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,125'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,126'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,127'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,128'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,129'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,130'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,131'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,132'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,133'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,134'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,135'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,136'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,137'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,138'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,139'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,140'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,141'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,142'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,143'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,144'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,145'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,146'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,147'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,148'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,149'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,150'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,151'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,152'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,153'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,154'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,155'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,156'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,157'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,158'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,159'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,160'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,161'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,162'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,163'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,164'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,165'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,166'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,167'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,168'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,169'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,170'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,171'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,172'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,173'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,174'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,175'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,176'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,177'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,178'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,179'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,180'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,181'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,182'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,183'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,184'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,185'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,186'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,187'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,188'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,189'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,190'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,191'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,192'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,193'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,194'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,195'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,196'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,197'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,198'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,199'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,200'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,201'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,202'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,203'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,204'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,205'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,206'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,207'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,208'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,209'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,210'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,211'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,212'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,213'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,214'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,215'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,216'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,217'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,218'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,219'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,220'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,221'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,222'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,223'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,224'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,225'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,226'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,227'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,228'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,229'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,230'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,231'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,232'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,233'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,234'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,235'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,236'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,237'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,238'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,239'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,240'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,241'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,242'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,243'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,244'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,245'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,246'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,247'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,248'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,249'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,250'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,251'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,252'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,253'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,254'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,255'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,256'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,257'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,258'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,259'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,260'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,261'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,262'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,263'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,264'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,265'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,266'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,267'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,268'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,269'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,270'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,271'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,272'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,273'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,274'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,275'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,276'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,277'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,278'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,279'\n '/tmp/RtmpyDRQSn/file2b4f74ad2387/rfmri.nii,280'\n}\n}';&quot;
+## 
+## $spm$temporal$st$nslices
+## [1] 60
+## 
+## $spm$temporal$st$tr
+## [1] 1.8
+## 
+## $spm$temporal$st$ta
+## [1] 0
+## 
+## $spm$temporal$st$so
+## [1] &quot;[1740, 1680, 1620, 1560, 1500, 1440, 1380, 1320, 1260, 1200, 1140, 1080, 1020, 960, 900, 840, 780, 720, 660, 600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 0, 1740, 1680, 1620, 1560, 1500, 1440, 1380, 1320, 1260, 1200, 1140, 1080, 1020, 960, 900, 840, 780, 720, 660, 600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 0];&quot;
+## 
+## $spm$temporal$st$refslice
+## [1] 900
+## 
+## $spm$temporal$st$prefix
+## [1] &quot;'a'&quot;
+## 
+## 
+## 
+## 
+## attr(,&quot;class&quot;)
+## [1] &quot;matlabbatch&quot;
+## 
+## $script
+## [1] &quot;/tmp/RtmpyDRQSn/file2b4f49dbb9a6.m&quot;
+## 
+## $orig_filename
+## [1] &quot;/tmp/RtmpyDRQSn/rfmri.nii&quot;
+## 
+## $base_name
+## [1] &quot;rfmri.nii&quot;
+## 
+## $temporary_directory
+## [1] &quot;/tmp/RtmpyDRQSn/file2b4f74ad2387&quot;
+## 
+## $outfile
+## [1] &quot;/tmp/RtmpyDRQSn/arfmri.nii&quot;
+## 
+## $result
+## [1] 0</code></pre>
+<p>We see the output <code>aimg</code> has the filename of the slice-timing corrected 4D image.</p>
+</div>
+<div id="spatial-normalization" class="section level2">
+<h2>Spatial Normalization</h2>
+<div id="ac-pc-alignment" class="section level3">
+<h3>AC-PC Alignment</h3>
+<p>For the subsequent image normalization steps, SPM assumes the data is aligned along the anterior commissure (AC) posterior commissure (PC) line (AC-PC). The <code>acpc_reorient</code> function (based on <code>nii_setOrigin</code> from Dr. Chris Rorden) will do this. The syntax is that the first file (<code>mean_img</code>) is used to estimate the line/plane and the subsequent files are reoriented using this estimation (<code>aimg</code>). These are changes to the header of the image and the image with the new header is written to the same file as the input file.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  <span class="kw">acpc_reorient</span>(
+    <span class="dt">infiles =</span> <span class="kw">c</span>(mean_img, aimg$outfile),
+    <span class="dt">modality =</span> <span class="st">&quot;T1&quot;</span>)
+}</code></pre></div>
+<pre><code>## 
+##  #Reorientation /tmp/RtmpyDRQSn/meanfmri.nii</code></pre>
+<pre><code>## Script created: /tmp/RtmpyDRQSn/file2b4f64fb49b8.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f64fb49b8.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>##   /tmp/RtmpyDRQSn/meanfmri.nii     /tmp/RtmpyDRQSn/arfmri.nii 
+## &quot;/tmp/RtmpyDRQSn/meanfmri.nii&quot;   &quot;/tmp/RtmpyDRQSn/arfmri.nii&quot;</code></pre>
+<div id="anatomical-mri-coregistration-to-mean-fmri" class="section level4">
+<h4>Anatomical MRI Coregistration to Mean fMRI</h4>
+<p>Here we will perform the registration of the T1-weigted anatomical image into the space of the mean fMRI image after realignment. This is referred to as “co-registration” as it is within-subject registration, but across modalities (where we referred to within-subject, within-modality as realignment).</p>
+<p>Here, we also reorient the anatomical image the AC-PC line. We then perform the coregistration using <code>spm12_coregister</code>, where the fixed image is the mean image and the moving image is the anatomical.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  <span class="kw">acpc_reorient</span>(
+  <span class="dt">infiles =</span> t1_fname,
+  <span class="dt">modality =</span> <span class="st">&quot;T1&quot;</span>)
+  coreg =<span class="st"> </span><span class="kw">spm12_coregister_estimate</span>(
+    <span class="dt">fixed =</span> realigned[[<span class="st">&quot;mean&quot;</span>]], 
+    <span class="dt">moving =</span> t1_fname, 
+    <span class="dt">cost_fun =</span> <span class="st">&quot;nmi&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+}</code></pre></div>
+<pre><code>## 
+##  #Reorientation /tmp/RtmpyDRQSn/anat.nii</code></pre>
+<pre><code>## Script created: /tmp/RtmpyDRQSn/file2b4f381b4812.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f381b4812.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## Checking Filenames</code></pre>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f9effacb.m, which calls /tmp/RtmpyDRQSn/file2b4f1e3036d4.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f9effacb.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<p>We see the anatomical image has been transformed and resliced into the mean fMRI image space (and thus has the resolution of that image).</p>
+</div>
+</div>
+</div>
+<div id="anatomical-mri-segmentation-and-spatial-normalize-estimation" class="section level2">
+<h2>Anatomical MRI Segmentation (and Spatial Normalize Estimation)</h2>
+<p>Here we perform the segmentation of the co-registered anatomical image from above. This will segment the image into 6 different regions, where the regions are gray matter, white matter, cerebrospinal fluid (CSF), bone, soft tissue, and the background. You should inspect these visually before using them to ensure quality and no reordering due to artifacts.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  seg =<span class="st"> </span><span class="kw">spm12_segment</span>(
+    <span class="dt">filename =</span> coreg$outfile,
+    <span class="dt">set_origin =</span> <span class="ot">FALSE</span>, 
+    <span class="dt">bias_corrected =</span> <span class="ot">TRUE</span>,
+    <span class="dt">native =</span> <span class="ot">TRUE</span>,
+    <span class="dt">dartel =</span> <span class="ot">TRUE</span>,
+    <span class="dt">unmodulated =</span> <span class="ot">TRUE</span>,
+    <span class="dt">modulated =</span> <span class="ot">TRUE</span>,
+    <span class="dt">affine =</span> <span class="st">&quot;mni&quot;</span>,
+    <span class="dt">sampling_distance =</span> <span class="fl">1.5</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+  <span class="kw">print</span>(<span class="kw">names</span>(seg))
+}</code></pre></div>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Segment_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>##  [1] &quot;spm&quot;                 &quot;script&quot;              &quot;result&quot;             
+##  [4] &quot;outfiles&quot;            &quot;outmat&quot;              &quot;deformation&quot;        
+##  [7] &quot;inverse_deformation&quot; &quot;dartel&quot;              &quot;unmodulated&quot;        
+## [10] &quot;modulated&quot;           &quot;bias_corrected&quot;</code></pre>
+<p>In order to segment the image, SPM spatially normalizes the image to the MNI template, however. This transformation will be the one we use to transform the fMRI data to MNI space. We see in <code>seg_reg</code> a <code>deformation</code> file, which is the transformation. We also see the output segmentation files of the probability of each class, in native space. We only tend to care about the first 3 categories.</p>
+<div id="applying-spatial-normalization-transformation" class="section level3">
+<h3>Applying Spatial Normalization Transformation</h3>
+<p>Now that we have esimated the transformation from the T1 image, we can take that deformation and apply it to the fMRI data using <code>spm12_normalize_write</code>. Again, we are registering to the MNI template and will use a standard bounding box. We pass the anatomical, mean fMRI, and 4D fMRI data in to be transformed.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> aimg$outfile,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+  
+  mean_norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> mean_img,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)  
+  
+  anat_norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> seg$bias_corrected,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>),
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>
+  )
+  
+  anat_norm2x2x2 =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> seg$bias_corrected,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>),
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>
+  )  
+}</code></pre></div>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<p>Now we have the indirect spatially normalized data in MNI template space.</p>
+</div>
+</div>
+<div id="spatial-smoothing" class="section level2">
+<h2>Spatial Smoothing</h2>
+<p>Here we will perform spatial smoothing of the 4D fMRI data in template space. We can set the full-width half max (FWHM) for the Gaussian smoother. The relationship between the FWHM and the Gaussian standard deviation is:</p>
+<p><span class="math display">\[
+FWHM = \sigma \sqrt{8 \log(2)}
+\]</span> where <span class="math inline">\(\log\)</span>` is the natural log.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  smooth_norm =<span class="st"> </span><span class="kw">spm12_smooth</span>(
+    norm$outfiles[[<span class="dv">1</span>]], 
+    <span class="dt">fwhm =</span> <span class="dv">5</span>, 
+    <span class="dt">prefix =</span> <span class="st">&quot;s5&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+}</code></pre></div>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Smooth_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<p>In many applications, this is the data you will use for post-processing and analysis. Motion correction has usually been applied above, but some motion correct this data as well.</p>
+</div>
+</div>
+<div id="first-level-model" class="section level1">
+<h1>First Level Model</h1>
+<div id="estimate-model" class="section level2">
+<h2>Estimate Model</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">output_directory =<span class="st"> </span><span class="kw">file.path</span>(run_dir, <span class="st">&quot;output&quot;</span>)
+if (!<span class="kw">dir.exists</span>(output_directory)) {
+  <span class="kw">dir.create</span>(output_directory)
+}
+output_directory =<span class="st"> </span><span class="kw">normalizePath</span>(output_directory)
+
+################################
+<span class="co"># Same model just using condition list</span>
+################################
+condition_list =<span class="st"> </span><span class="kw">list</span>(
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,
+       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">100</span>, <span class="dv">180</span>, <span class="dv">260</span>, <span class="dv">340</span>, <span class="dv">420</span>),
+       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)
+  ),
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,
+       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">60</span>, <span class="dv">140</span>, <span class="dv">220</span>, <span class="dv">300</span>, <span class="dv">380</span>, <span class="dv">460</span>),
+       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)
+  )
+)
+if (<span class="kw">have_matlab</span>()) {
+  first_model =<span class="st"> </span><span class="kw">spm12_first_level</span>(
+    <span class="dt">scans =</span> smooth_norm$outfiles,
+    <span class="dt">n_time_points =</span> n_time_points,
+    <span class="dt">units =</span> <span class="st">&quot;secs&quot;</span>,
+    <span class="dt">slice_timed =</span> <span class="ot">FALSE</span>,
+    <span class="dt">tr =</span> tr,
+    <span class="dt">condition_list =</span> condition_list,
+    <span class="dt">regressor_mat =</span> rpfile,
+    <span class="dt">outdir =</span> output_directory,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>
+  )
+  
+  cons =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="st">&quot;beta.*[.]nii&quot;</span>, 
+    <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+  <span class="kw">print</span>(cons)
+}</code></pre></div>
+<pre><code>## Warning in normalizePath(spm): path[1]=&quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/
+## output/SPM.mat&quot;: No such file or directory</code></pre>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f602c6de4.m, which calls /tmp/RtmpyDRQSn/file2b4f5c2086dc.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f602c6de4.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## [1] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0001.nii&quot;
+## [2] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0002.nii&quot;
+## [3] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0003.nii&quot;
+## [4] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0004.nii&quot;
+## [5] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0005.nii&quot;
+## [6] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0006.nii&quot;
+## [7] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0007.nii&quot;
+## [8] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0008.nii&quot;
+## [9] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/beta_0009.nii&quot;</code></pre>
+</div>
+<div id="contrast-manager---creating-contrasts" class="section level2">
+<h2>Contrast Manager - Creating Contrasts</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">contrasts =<span class="st"> </span><span class="kw">list</span>(
+  <span class="kw">list</span>(
+    <span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,
+    <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),
+    <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,
+    <span class="dt">type =</span> <span class="st">&quot;T&quot;</span> ),
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,
+       <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>)),
+       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,
+       <span class="dt">type =</span> <span class="st">&quot;T&quot;</span>), 
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;AllEffects&quot;</span>,
+       <span class="dt">weights =</span> <span class="kw">rbind</span>(
+         <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),
+         <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>))
+       ),
+       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,
+       <span class="dt">type =</span> <span class="st">&quot;F&quot;</span>)   
+)
+
+
+if (<span class="kw">have_matlab</span>()) {
+  contrast_res =<span class="st"> </span><span class="kw">spm12_contrast_manager</span>(
+    <span class="dt">spm =</span> first_model$spmmat,
+    <span class="dt">delete_existing =</span> <span class="ot">TRUE</span>,
+    <span class="dt">contrast_list =</span> contrasts,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>
+  )
+}</code></pre></div>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f301495c1.m, which calls /tmp/RtmpyDRQSn/file2b4f72c35518.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f301495c1.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  <span class="co"># dir(output_directory)</span>
+  
+  cons =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="st">&quot;con.*[.]nii&quot;</span>, <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+  <span class="kw">print</span>(cons)
+  stats =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="st">&quot;spm(T|F).*[.]nii&quot;</span>, 
+    <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+  <span class="kw">print</span>(stats)
+  spm1 =<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;spmT_0001&quot;</span>, stats, <span class="dt">value =</span> <span class="ot">TRUE</span>)
+  stats_img =<span class="st"> </span><span class="kw">readnii</span>(spm1)
+  t1_fname =<span class="st"> </span>anat_norm2x2x2$outfiles
+  t1 =<span class="st"> </span><span class="kw">readnii</span>(t1_fname)
+  <span class="kw">ortho2</span>(t1, stats_img, <span class="dt">col.y =</span> scales::<span class="kw">alpha</span>(<span class="kw">hotmetal</span>(), <span class="fl">0.5</span>))
+
+  normed_mean =<span class="st"> </span><span class="kw">readnii</span>(mean_norm$outfiles)
+  <span class="kw">ortho2</span>(t1, normed_mean, <span class="dt">col.y =</span> scales::<span class="kw">alpha</span>(<span class="kw">hotmetal</span>(), <span class="fl">0.25</span>))
+  <span class="kw">ortho2</span>(t1, normed_mean, <span class="dt">col.y =</span> scales::<span class="kw">alpha</span>(<span class="kw">hotmetal</span>(), <span class="fl">0.25</span>),
+         <span class="dt">xyz =</span> <span class="kw">c</span>(<span class="dv">32</span>, <span class="dv">40</span>, <span class="dv">32</span>))
+  
+  <span class="co"># anat_img = readnii(anat_norm2x2x2$outfiles)</span>
+  <span class="co"># stat_t = readnii(stats[2])</span>
+}</code></pre></div>
+<pre><code>## [1] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/con_0001.nii&quot;
+## [2] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/con_0002.nii&quot;
+## [1] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/spmF_0003.nii&quot;
+## [2] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/spmT_0001.nii&quot;
+## [3] &quot;/tmp/RtmpyDRQSn/file2b4f1abca0fa/output/spmT_0002.nii&quot;</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --><img src="data:image/png;base64,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" /><!-- --><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">contrast_query_list =<span class="st"> </span><span class="kw">list</span>(
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,
+       <span class="dt">weights =</span> <span class="dv">1</span>,
+       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,
+       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,
+       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>),
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,
+       <span class="dt">weights =</span> <span class="dv">2</span>,
+       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,
+       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,
+       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)  
+)
+
+contrast_query_list =<span class="st"> </span>
+<span class="st">  </span><span class="kw">list</span>(
+    <span class="kw">list</span>(
+    <span class="dt">name =</span> <span class="st">&quot;All Contrasts&quot;</span>,
+    <span class="dt">weights =</span> <span class="ot">Inf</span>,
+    <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,
+    <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,
+    <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)
+  )
+if (<span class="kw">have_matlab</span>()) {
+  display =<span class="st"> </span><span class="kw">all</span>(<span class="kw">Sys.getenv</span>(<span class="st">&quot;DISPLAY&quot;</span>) !=<span class="st"> &quot;&quot;</span>)
+  desktop =<span class="st"> </span>display
+  result_format =<span class="st"> &quot;csv&quot;</span>
+  results =<span class="st"> </span><span class="kw">spm12_results</span>(
+    <span class="dt">spm =</span> first_model$spmmat,
+    <span class="dt">units =</span> <span class="st">&quot;Volumetric&quot;</span>,
+    <span class="dt">result_format =</span> result_format,
+    <span class="dt">contrast_list =</span> contrast_query_list,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>,
+    <span class="dt">display =</span> display,
+    <span class="dt">desktop =</span> <span class="ot">FALSE</span>,
+    <span class="dt">write_images =</span> <span class="st">&quot;binary_clusters&quot;</span>,
+    <span class="dt">image_basename =</span> <span class="st">&quot;thresholded&quot;</span>)
+  out_results =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="kw">paste0</span>(<span class="st">&quot;spm.*[.]&quot;</span>, result_format),
+    <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)  
+  <span class="co"># out_dir = spm_directory(spm = first_model$spmmat)</span>
+}</code></pre></div>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## Warning in spm12_results(spm = first_model$spmmat, units = &quot;Volumetric&quot;, :
+## Writing Images may require desktop = TRUE</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f2e05d857.m, which calls /tmp/RtmpyDRQSn/file2b4f7116147.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash  -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f2e05d857.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+</div>
+<div id="bibliography" class="section level2">
+<h2>Bibliography</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bib =<span class="st"> '@article{ashburner2005unified,</span>
+<span class="st">  title={Unified segmentation},</span>
+<span class="st">  author={Ashburner, John and Friston, Karl J},</span>
+<span class="st">  journal={Neuroimage},</span>
+<span class="st">  volume={26},</span>
+<span class="st">  number={3},</span>
+<span class="st">  pages={839--851},</span>
+<span class="st">  year={2005},</span>
+<span class="st">  publisher={Elsevier}</span>
+<span class="st">}'</span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

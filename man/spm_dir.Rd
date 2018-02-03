@@ -4,10 +4,14 @@
 \alias{spm_dir}
 \title{Get SPM12 Directory}
 \usage{
-spm_dir()
+spm_dir(verbose = FALSE)
+}
+\arguments{
+\item{verbose}{print diagnostic messages, passed to 
+\code{\link{install_spm12}}}
 }
 \value{
-Chracter vector of spm12 paths
+Character vector of spm12 paths
 }
 \description{
 Returns the SPM12 directory

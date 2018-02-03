@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="John Muschelli" />
+
+<meta name="date" content="2018-02-02" />
+
+<title>Preprocessing and First Level Model for Task fMRI</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Preprocessing and First Level Model for Task fMRI</h1>
+<h4 class="author"><em>John Muschelli</em></h4>
+<h4 class="date"><em>2018-02-02</em></h4>
+
+
+
+<div id="overview-of-spm12r-functions" class="section level1">
+<h1>Overview of <code>spm12r</code> functions</h1>
+<p>Requires MATLAB (installs SPM to R library)</p>
+<ul>
+<li><code>spm12_slice_timing</code> - slices are not taken instantaneously</li>
+<li><code>spm12_realign</code> - people move</li>
+<li><code>spm12_coregister</code> - structural imaging is higher resolution</li>
+<li><code>spm12_segment</code> - where’s the gray matter?</li>
+<li><code>spm12_normalize</code> - brains look better in MNI</li>
+<li><code>spm12_smooth</code> - turn that noise down</li>
+</ul>
+</div>
+<div id="data-used" class="section level1">
+<h1>Data used</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(httr)
+url =<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;https://ndownloader.figshare.com/articles/&quot;</span>,
+             <span class="st">&quot;5442298/versions/1&quot;</span>)
+zipfile =<span class="st"> </span><span class="kw">tempfile</span>(<span class="dt">fileext =</span> <span class="st">&quot;.zip&quot;</span>)
+res =<span class="st"> </span><span class="kw">GET</span>(
+  url, 
+  <span class="kw">write_disk</span>(<span class="dt">path =</span> zipfile),
+  if (<span class="kw">interactive</span>()) <span class="kw">progress</span>())
+run_dir =<span class="st"> </span><span class="kw">tempfile</span>()
+if (!<span class="kw">dir.exists</span>(run_dir)) {
+  <span class="kw">dir.create</span>(run_dir)
+}
+out_files =<span class="st"> </span>utils::<span class="kw">unzip</span>(zipfile, <span class="dt">exdir =</span> run_dir)
+<span class="kw">names</span>(out_files) =<span class="st"> </span>neurobase::<span class="kw">nii.stub</span>(
+  out_files, <span class="dt">bn =</span> <span class="ot">TRUE</span>)
+<span class="kw">file.remove</span>(zipfile)</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<p>We know the repetition time (TR) is 2 seconds for this data. It may be encoded in the NIfTI file itself or come from a parameter file from the scanner. We will drop the first 20 seconds to allow for signal stabilization.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(neurobase)
+##################################
+<span class="co"># Added quick reading of nifti header</span>
+##################################
+oro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;oro.nifti&quot;</span>)
+neuro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;neurobase&quot;</span>)
+if (oro_pkg &lt;<span class="st"> </span><span class="fl">0.8</span> ||<span class="st"> </span>neuro_pkg &lt;<span class="st"> </span><span class="fl">1.22</span>) {
+  get_nifti =<span class="st"> </span>neurobase::check_nifti 
+} else {
+  get_nifti =<span class="st"> </span>neurobase::check_nifti_header
+}
+
+fmri_filename =<span class="st"> </span>out_files[<span class="st">&quot;fmri&quot;</span>]
+t1_fname =<span class="st"> </span>out_files[<span class="st">&quot;anat&quot;</span>]
+tr =<span class="st"> </span><span class="fl">1.8</span> <span class="co"># seconds</span>
+hdr =<span class="st"> </span><span class="kw">get_nifti</span>(fmri_filename) <span class="co"># getting nifti header</span>
+
+nslices =<span class="st"> </span>oro.nifti::<span class="kw">nsli</span>(hdr)
+n_time_points =<span class="st"> </span>oro.nifti::<span class="kw">ntim</span>(hdr)
+time_points =<span class="st"> </span><span class="kw">seq</span>(n_time_points)
+ta =<span class="st"> </span><span class="dv">0</span>
+slice_order =<span class="st"> </span><span class="kw">c</span>(
+  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, 
+  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, 
+  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, 
+  <span class="dv">420</span>, <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>, 
+  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, 
+  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, 
+  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, <span class="dv">420</span>, 
+  <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>)
+ref_slice =<span class="st"> </span><span class="dv">900</span></code></pre></div>
+</div>
+<div id="checking-matlab" class="section level1">
+<h1>Checking MATLAB</h1>
+<p>As SPM requires MATLAB and calls all the functions through the <code>matlabr</code> package, we will have checks in this vignette/workflow that the user has MATLAB. The <code>have_matlab()</code> function returns a logical that is <code>TRUE</code> when <code>matlabr</code> can find MATLAB to run the subsequent commands.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(matlabr)
+<span class="kw">have_matlab</span>()</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">have_matlab</span>()</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<p>If this is not <code>TRUE</code>, almost none of the functionality below will run because it would simply result in errors.</p>
+</div>
+<div id="overall-processing" class="section level1">
+<h1>Overall Processing</h1>
+<p>We will show how to do spatial realignment, slice-timing correction, spatial normalization to the MNI template (2 different ways), and spatial smoothing. Overall, there are many different ways to order these operations, with different options, so this represents just one way to organize a preprocessing pipeline.</p>
+<div id="image-realignment" class="section level2">
+<h2>Image Realignment</h2>
+<p>Realignment is referring to in this case as within-subject registration of the 4D fMRI data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(spm12r)
+####################################
+<span class="co"># Realignment</span>
+####################################
+if (<span class="kw">have_matlab</span>()) {
+  
+  realigned =<span class="st"> </span><span class="kw">spm12_realign</span>( 
+    <span class="dt">filename =</span> fmri_filename,
+    <span class="dt">time_points =</span> time_points,
+    <span class="dt">quality =</span> <span class="fl">0.98</span>, 
+    <span class="dt">separation =</span> <span class="dv">3</span>,
+    <span class="dt">register_to =</span> <span class="st">&quot;mean&quot;</span>,
+    <span class="dt">est_interp =</span> <span class="st">&quot;bspline4&quot;</span>,
+    <span class="dt">reslice_interp =</span> <span class="st">&quot;bspline4&quot;</span>,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>
+  )
+  ################################
+  <span class="co"># reading in the mean image</span>
+  ##########################
+  mean_img =<span class="st"> </span>realigned[[<span class="st">&quot;mean&quot;</span>]]
+  mean_nifti =<span class="st"> </span><span class="kw">readnii</span>(mean_img)
+  
+  rpfile =<span class="st"> </span>realigned[[<span class="st">'rp'</span>]]
+  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)
+}</code></pre></div>
+<pre><code>## # Reslice is all+mean</code></pre>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4fa6d21.m, which calls /tmp/RtmpyDRQSn/file2b4f9719f0e.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4fa6d21.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<p>Overall the <code>spm12_realign</code> does the realignment. There is some discussion of performing realignment <strong>before</strong> slice-timing correction because estimation of motion parameters may be skewed after slice-timing correction. We see that the output <code>realigned</code> has the output 4D fMRI data (<code>outfiles</code>), the realignment parameters (<code>rp</code>), voxel-wise mean after realignment (<code>mean</code>), and the matrix of transformations for the 4D series (<code>mat</code>).</p>
+<div id="reading-in-the-rp-file" class="section level3">
+<h3>Reading in the RP file</h3>
+<p>Here we can read in the <code>rp</code> file to show the estimated parameters. These can be used as regressors in motion correction for further analyses.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">####################################
+<span class="co"># Read in Motion data</span>
+####################################
+if (<span class="kw">have_matlab</span>()) {
+  rpfile =<span class="st"> </span>realigned[[<span class="st">'rp'</span>]]
+  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)
+  <span class="kw">colnames</span>(rp) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;z&quot;</span>, 
+                   <span class="st">&quot;roll&quot;</span>, <span class="st">&quot;pitch&quot;</span>, <span class="st">&quot;yaw&quot;</span>)
+  rp =<span class="st"> </span><span class="kw">as.matrix</span>(rp)
+  <span class="kw">print</span>(<span class="kw">head</span>(rp))
+  <span class="kw">print</span>(<span class="kw">dim</span>(rp))
+}</code></pre></div>
+<pre><code>##                 x           y            z          roll         pitch
+## [1,] 0.0000000000  0.00000000  0.000000000  0.0000000000  0.000000e+00
+## [2,] 0.0048211607 -0.05013463 -0.060077472 -0.0004428566  6.155483e-05
+## [3,] 0.0157221950 -0.04831228  0.049669019 -0.0002809896 -4.321093e-05
+## [4,] 0.0081128381 -0.04362921 -0.086630878 -0.0001192797 -1.334368e-05
+## [5,] 0.0255457440 -0.07977505  0.001169408 -0.0003435793 -1.783017e-04
+## [6,] 0.0007600395 -0.03691525 -0.078877335  0.0000856010 -1.312280e-04
+##                yaw
+## [1,]  0.000000e+00
+## [2,] -1.649043e-05
+## [3,] -1.591068e-04
+## [4,] -9.216786e-05
+## [5,] -6.443807e-05
+## [6,]  5.631540e-06
+## [1] 280   6</code></pre>
+</div>
+</div>
+<div id="slice-timing-correction" class="section level2">
+<h2>Slice-Timing Correction</h2>
+<p>A slice-timing correction does interpolation since each slice was not actually taken at the same time point, but a shifted time point over the course of an entire TR. The correction requires you to input the reference slice (in this case the median, <code>ref_slice</code>), the repetition time (<code>tr</code>), time between the first and the last slice within one scan (<code>ta</code>), and the order the slices were acquired. In our case, it was done in an ascending, contiguous order, so we created the slice order as such. If you used descending or interleaved acquisition, then this must be changed accordingly.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">####################################
+<span class="co"># Slice Timing Correction</span>
+####################################
+if (<span class="kw">have_matlab</span>()) {
+  
+  aimg =<span class="st"> </span><span class="kw">spm12_slice_timing</span>(
+    <span class="dt">filename =</span> realigned[[<span class="st">'outfiles'</span>]],
+    <span class="dt">nslices =</span> nslices,
+    <span class="dt">tr =</span> tr, 
+    <span class="dt">slice_order =</span> slice_order,
+    <span class="dt">time_points =</span> <span class="kw">seq</span>(n_time_points),
+    <span class="dt">ta =</span> ta, 
+    <span class="dt">ref_slice =</span> ref_slice,
+    <span class="dt">prefix =</span> <span class="st">&quot;a&quot;</span>, 
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>, 
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+  <span class="kw">print</span>(aimg)
+}</code></pre></div>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f5a453952.m, which calls /tmp/RtmpyDRQSn/file2b4f76608c02.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f5a453952.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## $spm
+## $spm
+## $spm$temporal
+## $spm$temporal$st
+## $spm$temporal$st$scans
+## [1] &quot;{{'/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,1'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,2'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,3'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,4'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,5'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,6'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,7'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,8'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,9'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,10'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,11'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,12'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,13'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,14'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,15'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,16'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,17'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,18'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,19'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,20'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,21'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,22'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,23'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,24'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,25'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,26'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,27'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,28'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,29'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,30'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,31'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,32'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,33'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,34'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,35'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,36'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,37'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,38'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,39'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,40'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,41'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,42'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,43'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,44'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,45'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,46'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,47'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,48'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,49'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,50'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,51'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,52'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,53'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,54'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,55'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,56'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,57'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,58'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,59'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,60'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,61'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,62'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,63'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,64'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,65'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,66'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,67'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,68'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,69'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,70'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,71'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,72'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,73'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,74'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,75'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,76'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,77'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,78'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,79'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,80'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,81'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,82'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,83'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,84'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,85'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,86'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,87'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,88'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,89'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,90'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,91'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,92'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,93'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,94'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,95'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,96'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,97'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,98'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,99'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,100'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,101'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,102'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,103'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,104'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,105'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,106'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,107'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,108'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,109'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,110'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,111'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,112'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,113'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,114'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,115'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,116'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,117'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,118'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,119'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,120'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,121'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,122'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,123'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,124'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,125'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,126'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,127'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,128'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,129'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,130'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,131'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,132'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,133'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,134'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,135'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,136'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,137'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,138'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,139'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,140'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,141'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,142'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,143'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,144'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,145'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,146'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,147'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,148'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,149'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,150'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,151'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,152'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,153'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,154'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,155'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,156'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,157'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,158'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,159'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,160'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,161'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,162'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,163'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,164'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,165'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,166'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,167'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,168'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,169'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,170'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,171'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,172'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,173'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,174'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,175'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,176'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,177'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,178'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,179'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,180'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,181'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,182'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,183'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,184'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,185'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,186'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,187'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,188'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,189'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,190'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,191'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,192'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,193'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,194'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,195'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,196'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,197'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,198'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,199'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,200'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,201'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,202'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,203'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,204'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,205'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,206'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,207'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,208'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,209'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,210'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,211'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,212'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,213'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,214'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,215'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,216'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,217'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,218'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,219'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,220'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,221'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,222'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,223'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,224'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,225'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,226'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,227'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,228'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,229'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,230'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,231'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,232'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,233'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,234'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,235'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,236'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,237'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,238'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,239'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,240'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,241'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,242'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,243'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,244'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,245'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,246'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,247'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,248'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,249'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,250'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,251'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,252'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,253'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,254'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,255'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,256'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,257'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,258'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,259'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,260'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,261'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,262'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,263'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,264'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,265'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,266'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,267'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,268'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,269'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,270'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,271'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,272'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,273'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,274'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,275'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,276'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,277'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,278'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,279'\n '/tmp/RtmpyDRQSn/file2b4f29b56102/rfmri.nii,280'\n}\n}';&quot;
+## 
+## $spm$temporal$st$nslices
+## [1] 60
+## 
+## $spm$temporal$st$tr
+## [1] 1.8
+## 
+## $spm$temporal$st$ta
+## [1] 0
+## 
+## $spm$temporal$st$so
+## [1] &quot;[1740, 1680, 1620, 1560, 1500, 1440, 1380, 1320, 1260, 1200, 1140, 1080, 1020, 960, 900, 840, 780, 720, 660, 600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 0, 1740, 1680, 1620, 1560, 1500, 1440, 1380, 1320, 1260, 1200, 1140, 1080, 1020, 960, 900, 840, 780, 720, 660, 600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 0];&quot;
+## 
+## $spm$temporal$st$refslice
+## [1] 900
+## 
+## $spm$temporal$st$prefix
+## [1] &quot;'a'&quot;
+## 
+## 
+## 
+## 
+## attr(,&quot;class&quot;)
+## [1] &quot;matlabbatch&quot;
+## 
+## $script
+## [1] &quot;/tmp/RtmpyDRQSn/file2b4f4cdf56e3.m&quot;
+## 
+## $orig_filename
+## [1] &quot;/tmp/RtmpyDRQSn/rfmri.nii&quot;
+## 
+## $base_name
+## [1] &quot;rfmri.nii&quot;
+## 
+## $temporary_directory
+## [1] &quot;/tmp/RtmpyDRQSn/file2b4f29b56102&quot;
+## 
+## $outfile
+## [1] &quot;/tmp/RtmpyDRQSn/arfmri.nii&quot;
+## 
+## $result
+## [1] 0</code></pre>
+<p>We see the output <code>aimg</code> has the filename of the slice-timing corrected 4D image.</p>
+</div>
+<div id="spatial-normalization" class="section level2">
+<h2>Spatial Normalization</h2>
+<div id="ac-pc-alignment" class="section level3">
+<h3>AC-PC Alignment</h3>
+<p>For the subsequent image normalization steps, SPM assumes the data is aligned along the anterior commissure (AC) posterior commissure (PC) line (AC-PC). The <code>acpc_reorient</code> function (based on <code>nii_setOrigin</code> from Dr. Chris Rorden) will do this. The syntax is that the first file (<code>mean_img</code>) is used to estimate the line/plane and the subsequent files are reoriented using this estimation (<code>aimg</code>). These are changes to the header of the image and the image with the new header is written to the same file as the input file.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># if (have_matlab()) {</span>
+<span class="co">#   acpc_reorient(</span>
+<span class="co">#     infiles = c(mean_img, aimg),</span>
+<span class="co">#     modality = &quot;T1&quot;)</span>
+<span class="co"># }</span></code></pre></div>
+<div id="anatomical-mri-coregistration-to-mean-fmri" class="section level4">
+<h4>Anatomical MRI Coregistration to Mean fMRI</h4>
+<p>Here we will perform the registration of the T1-weigted anatomical image into the space of the mean fMRI image after realignment. This is referred to as “co-registration” as it is within-subject registration, but across modalities (where we referred to within-subject, within-modality as realignment).</p>
+<p>Here, we also reorient the anatomical image the AC-PC line. We then perform the coregistration using <code>spm12_coregister</code>, where the fixed image is the mean image and the moving image is the anatomical.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  <span class="co"># acpc_reorient(</span>
+  <span class="co"># infiles = t1_fname,</span>
+  <span class="co"># modality = &quot;T1&quot;)</span>
+  coreg =<span class="st"> </span><span class="kw">spm12_coregister_estimate</span>(
+    <span class="dt">fixed =</span> realigned[[<span class="st">&quot;mean&quot;</span>]], 
+    <span class="dt">moving =</span> t1_fname, 
+    <span class="dt">cost_fun =</span> <span class="st">&quot;nmi&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+}</code></pre></div>
+<pre><code>## Checking Filenames</code></pre>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f49141313.m, which calls /tmp/RtmpyDRQSn/file2b4f7bafc201.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f49141313.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<p>We see the anatomical image has been transformed and resliced into the mean fMRI image space (and thus has the resolution of that image).</p>
+</div>
+</div>
+</div>
+<div id="anatomical-mri-segmentation-and-spatial-normalize-estimation" class="section level2">
+<h2>Anatomical MRI Segmentation (and Spatial Normalize Estimation)</h2>
+<p>Here we perform the segmentation of the co-registered anatomical image from above. This will segment the image into 6 different regions, where the regions are gray matter, white matter, cerebrospinal fluid (CSF), bone, soft tissue, and the background. You should inspect these visually before using them to ensure quality and no reordering due to artifacts.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  seg =<span class="st"> </span><span class="kw">spm12_segment</span>(
+    <span class="dt">filename =</span> coreg$outfile,
+    <span class="dt">set_origin =</span> <span class="ot">FALSE</span>, 
+    <span class="dt">bias_corrected =</span> <span class="ot">TRUE</span>,
+    <span class="dt">native =</span> <span class="ot">TRUE</span>,
+    <span class="dt">dartel =</span> <span class="ot">TRUE</span>,
+    <span class="dt">unmodulated =</span> <span class="ot">TRUE</span>,
+    <span class="dt">modulated =</span> <span class="ot">TRUE</span>,
+    <span class="dt">affine =</span> <span class="st">&quot;mni&quot;</span>,
+    <span class="dt">sampling_distance =</span> <span class="fl">1.5</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+  <span class="kw">print</span>(<span class="kw">names</span>(seg))
+}</code></pre></div>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Segment_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>##  [1] &quot;spm&quot;                 &quot;script&quot;              &quot;result&quot;             
+##  [4] &quot;outfiles&quot;            &quot;outmat&quot;              &quot;deformation&quot;        
+##  [7] &quot;inverse_deformation&quot; &quot;dartel&quot;              &quot;unmodulated&quot;        
+## [10] &quot;modulated&quot;           &quot;bias_corrected&quot;</code></pre>
+<p>In order to segment the image, SPM spatially normalizes the image to the MNI template, however. This transformation will be the one we use to transform the fMRI data to MNI space. We see in <code>seg_reg</code> a <code>deformation</code> file, which is the transformation. We also see the output segmentation files of the probability of each class, in native space. We only tend to care about the first 3 categories.</p>
+<div id="applying-spatial-normalization-transformation" class="section level3">
+<h3>Applying Spatial Normalization Transformation</h3>
+<p>Now that we have esimated the transformation from the T1 image, we can take that deformation and apply it to the fMRI data using <code>spm12_normalize_write</code>. Again, we are registering to the MNI template and will use a standard bounding box. We pass the anatomical, mean fMRI, and 4D fMRI data in to be transformed.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> aimg$outfile,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+  
+  anat_norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> seg$bias_corrected,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>),
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>
+  )
+  
+  anat_norm2x2x2 =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(
+    <span class="dt">deformation =</span> seg$deformation,
+    <span class="dt">other.files =</span> seg$bias_corrected,
+    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(
+      <span class="kw">c</span>(-<span class="dv">78</span>, -<span class="dv">112</span>, -<span class="dv">70</span>, 
+        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, 
+      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),
+    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,
+    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>),
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>
+  )  
+}</code></pre></div>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Normalize_Write_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<p>Now we have the indirect spatially normalized data in MNI template space.</p>
+</div>
+</div>
+<div id="spatial-smoothing" class="section level2">
+<h2>Spatial Smoothing</h2>
+<p>Here we will perform spatial smoothing of the 4D fMRI data in template space. We can set the full-width half max (FWHM) for the Gaussian smoother. The relationship between the FWHM and the Gaussian standard deviation is:</p>
+<p><span class="math display">\[
+FWHM = \sigma \sqrt{8 \log(2)}
+\]</span> where <span class="math inline">\(\log\)</span>` is the natural log.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  smooth_norm =<span class="st"> </span><span class="kw">spm12_smooth</span>(
+    norm$outfiles[[<span class="dv">1</span>]], 
+    <span class="dt">fwhm =</span> <span class="dv">5</span>, 
+    <span class="dt">prefix =</span> <span class="st">&quot;s5&quot;</span>,
+    <span class="dt">retimg =</span> <span class="ot">FALSE</span>)
+}</code></pre></div>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12</code></pre>
+<pre><code>## # Running script /tmp/RtmpyDRQSn/Executable.m
+## which calls /tmp/RtmpyDRQSn/Smooth_job.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/Executable.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## # Removing scripts</code></pre>
+<p>In many applications, this is the data you will use for post-processing and analysis. Motion correction has usually been applied above, but some motion correct this data as well.</p>
+</div>
+</div>
+<div id="first-level-model" class="section level1">
+<h1>First Level Model</h1>
+<div id="estimate-model" class="section level2">
+<h2>Estimate Model</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">output_directory =<span class="st"> </span><span class="kw">file.path</span>(run_dir, <span class="st">&quot;output&quot;</span>)
+if (!<span class="kw">dir.exists</span>(output_directory)) {
+  <span class="kw">dir.create</span>(output_directory)
+}
+output_directory =<span class="st"> </span><span class="kw">normalizePath</span>(output_directory)
+
+################################
+<span class="co"># Same model just using condition list</span>
+################################
+condition_list =<span class="st"> </span><span class="kw">list</span>(
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,
+       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">100</span>, <span class="dv">180</span>, <span class="dv">260</span>, <span class="dv">340</span>, <span class="dv">420</span>),
+       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)
+  ),
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,
+       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">60</span>, <span class="dv">140</span>, <span class="dv">220</span>, <span class="dv">300</span>, <span class="dv">380</span>, <span class="dv">460</span>),
+       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)
+  )
+)
+if (<span class="kw">have_matlab</span>()) {
+  first_model =<span class="st"> </span><span class="kw">spm12_first_level</span>(
+    <span class="dt">scans =</span> smooth_norm$outfiles,
+    <span class="dt">n_time_points =</span> n_time_points,
+    <span class="dt">units =</span> <span class="st">&quot;secs&quot;</span>,
+    <span class="dt">slice_timed =</span> <span class="ot">FALSE</span>,
+    <span class="dt">tr =</span> tr,
+    <span class="dt">condition_list =</span> condition_list,
+    <span class="dt">regressor_mat =</span> rpfile,
+    <span class="dt">outdir =</span> output_directory,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>
+  )
+  
+  cons =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="st">&quot;beta.*[.]nii&quot;</span>, 
+    <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+  <span class="kw">print</span>(cons)
+}</code></pre></div>
+<pre><code>## Warning in normalizePath(spm): path[1]=&quot;/tmp/RtmpyDRQSn/file2b4f555a5571/
+## output/SPM.mat&quot;: No such file or directory</code></pre>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4fee4e365.m, which calls /tmp/RtmpyDRQSn/file2b4f5b034f3b.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4fee4e365.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<pre><code>## [1] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0001.nii&quot;
+## [2] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0002.nii&quot;
+## [3] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0003.nii&quot;
+## [4] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0004.nii&quot;
+## [5] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0005.nii&quot;
+## [6] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0006.nii&quot;
+## [7] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0007.nii&quot;
+## [8] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0008.nii&quot;
+## [9] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/beta_0009.nii&quot;</code></pre>
+</div>
+<div id="contrast-manager---creating-contrasts" class="section level2">
+<h2>Contrast Manager - Creating Contrasts</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">contrasts =<span class="st"> </span><span class="kw">list</span>(
+  <span class="kw">list</span>(
+    <span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,
+    <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),
+    <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,
+    <span class="dt">type =</span> <span class="st">&quot;T&quot;</span> ),
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,
+       <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>)),
+       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,
+       <span class="dt">type =</span> <span class="st">&quot;T&quot;</span>), 
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;AllEffects&quot;</span>,
+       <span class="dt">weights =</span> <span class="kw">rbind</span>(
+         <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),
+         <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>))
+       ),
+       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,
+       <span class="dt">type =</span> <span class="st">&quot;F&quot;</span>)   
+)
+
+
+if (<span class="kw">have_matlab</span>()) {
+  contrast_res =<span class="st"> </span><span class="kw">spm12_contrast_manager</span>(
+    <span class="dt">spm =</span> first_model$spmmat,
+    <span class="dt">delete_existing =</span> <span class="ot">TRUE</span>,
+    <span class="dt">contrast_list =</span> contrasts,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>
+  )
+}</code></pre></div>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4fd01c399.m, which calls /tmp/RtmpyDRQSn/file2b4f7a2fc7f7.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4fd01c399.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">have_matlab</span>()) {
+  <span class="kw">dir</span>(output_directory)
+  
+  cons =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="st">&quot;con.*[.]nii&quot;</span>, <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+  <span class="kw">print</span>(cons)
+  stats =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="st">&quot;spm(T|F).*[.]nii&quot;</span>, 
+    <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+  <span class="kw">print</span>(stats)
+  <span class="co"># anat_img = readnii(anat_norm2x2x2$outfiles)</span>
+  <span class="co"># stat_t = readnii(stats[2])</span>
+}</code></pre></div>
+<pre><code>## [1] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/con_0001.nii&quot;
+## [2] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/con_0002.nii&quot;
+## [1] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/spmF_0003.nii&quot;
+## [2] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/spmT_0001.nii&quot;
+## [3] &quot;/tmp/RtmpyDRQSn/file2b4f555a5571/output/spmT_0002.nii&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">contrast_query_list =<span class="st"> </span><span class="kw">list</span>(
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,
+       <span class="dt">weights =</span> <span class="dv">1</span>,
+       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,
+       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,
+       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>),
+  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,
+       <span class="dt">weights =</span> <span class="dv">2</span>,
+       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,
+       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,
+       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)  
+)
+
+contrast_query_list =<span class="st"> </span>
+<span class="st">  </span><span class="kw">list</span>(
+    <span class="kw">list</span>(
+    <span class="dt">name =</span> <span class="st">&quot;All Contrasts&quot;</span>,
+    <span class="dt">weights =</span> <span class="ot">Inf</span>,
+    <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,
+    <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,
+    <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)
+  )
+if (<span class="kw">have_matlab</span>()) {
+  display =<span class="st"> </span><span class="kw">all</span>(<span class="kw">Sys.getenv</span>(<span class="st">&quot;DISPLAY&quot;</span>) !=<span class="st"> &quot;&quot;</span>)
+  desktop =<span class="st"> </span>display
+  result_format =<span class="st"> &quot;csv&quot;</span>
+  results =<span class="st"> </span><span class="kw">spm12_results</span>(
+    <span class="dt">spm =</span> first_model$spmmat,
+    <span class="dt">units =</span> <span class="st">&quot;Volumetric&quot;</span>,
+    <span class="dt">result_format =</span> result_format,
+    <span class="dt">contrast_list =</span> contrast_query_list,
+    <span class="dt">clean =</span> <span class="ot">FALSE</span>,
+    <span class="dt">display =</span> display,
+    <span class="dt">desktop =</span> <span class="ot">FALSE</span>,
+    <span class="dt">write_images =</span> <span class="st">&quot;binary_clusters&quot;</span>,
+    <span class="dt">image_basename =</span> <span class="st">&quot;thresholded&quot;</span>)
+  out_results =<span class="st"> </span><span class="kw">list.files</span>(
+    <span class="dt">pattern =</span> <span class="kw">paste0</span>(<span class="st">&quot;spm.*[.]&quot;</span>, result_format),
+    <span class="dt">path =</span> output_directory,
+    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)  
+  <span class="co"># out_dir = spm_directory(spm = first_model$spmmat)</span>
+}</code></pre></div>
+<pre><code>## # Running matlabbatch job</code></pre>
+<pre><code>## Warning in spm12_results(spm = first_model$spmmat, units = &quot;Volumetric&quot;, :
+## Writing Images may require desktop = TRUE</code></pre>
+<pre><code>## # Creating matlabbatch job</code></pre>
+<pre><code>## # Adding SPMDIR: /tmp/Rtmp8cHL0L/Rinst2b2dc8386ff/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /tmp/RtmpyDRQSn/file2b4f34f40ce5.m, which calls /tmp/RtmpyDRQSn/file2b4f229e5004.m</code></pre>
+<pre><code>## Command run is:</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash  -r  &quot;try, run('/tmp/RtmpyDRQSn/file2b4f34f40ce5.m'); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 0</code></pre>
+</div>
+<div id="bibliography" class="section level2">
+<h2>Bibliography</h2>
+<p>Ashburner J and Friston KJ (2005). “Unified segmentation.” <em>Neuroimage</em>, <em>26</em>(3), pp. 839-851.</p>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

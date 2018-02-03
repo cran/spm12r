@@ -1,5 +1,13 @@
 ## ----knit-setup, echo=FALSE, results='hide', eval=TRUE, cache = FALSE, warning = FALSE, message = FALSE----
 library(spm12r)
+library(matlabr)
+in_ci <- function() {
+  nzchar(Sys.getenv("CI"))
+}
+have_matlab = function() {
+  matlabr::have_matlab() & !in_ci()
+}
+knitr::opts_chunk$set(eval = have_matlab())
 
 ## ----makefiles-----------------------------------------------------------
 library(kirby21.t1)
@@ -12,6 +20,10 @@ files = c(anatomical = anatomical,
           functional = functional)
 files
 
+## ----include = FALSE, eval = TRUE----------------------------------------
+tr = 2 # seconds
+DROP = 10 # 20 seconds for stabilization
+
 ## ------------------------------------------------------------------------
 library(neurobase)
 tr = 2 # seconds
@@ -22,7 +34,7 @@ fmri = readnii(files["functional"])
 times = (DROP + 1):ntim(fmri)
 run_fmri = copyNIfTIHeader(fmri, fmri[,,,times], drop = TRUE)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ---- include = FALSE----------------------------------------------------
 rm(list = "fmri"); gc(); gc();
 
 ## ----nb_version, echo = FALSE, results="hide"----------------------------
@@ -56,8 +68,11 @@ if (ver < 0) {
   }
 }
 
-## ----have_matlab---------------------------------------------------------
-library(matlabr)
+## ----have_matlab, eval = FALSE-------------------------------------------
+#  library(matlabr)
+#  have_matlab()
+
+## ---- eval = TRUE--------------------------------------------------------
 have_matlab()
 
 ## ----realign-------------------------------------------------------------
@@ -65,6 +80,13 @@ library(spm12r)
 ####################################
 # Realignment
 ####################################
+realign_batch = build_spm12_realign( 
+  filename = run_fmri, 
+  register_to = "mean",
+  reslice = "mean"
+)
+print(names(realign_batch))
+print(names(unlist(realign_batch$spm)))
 if (have_matlab()) {
   realigned = spm12_realign( 
 	filename = run_fmri, 
@@ -72,7 +94,7 @@ if (have_matlab()) {
 	reslice = "mean",
 	clean = FALSE
 	)
-  print(realigned)
+  print(names(realigned))
 }
 
 ## ----rp_file-------------------------------------------------------------
@@ -98,20 +120,42 @@ slice_order = 1:nslices
 ref_slice = slice_order[median(seq(nslices))]
 ta = tr - tr/nslices
 n_time_points = ntim(run_fmri)
+
+# using run_fmri because if you do not have
+# matlab, then realigned not available
+st_batch = build_spm12_slice_timing(
+  filename = run_fmri,
+  time_points = seq(n_time_points),
+  nslices = nslices,
+  tr = tr,
+  ref_slice = ref_slice,
+  prefix = "a")
+
+print(names(st_batch))
+print(names(unlist(st_batch$spm)))
+
 if (have_matlab()) {
-  aimg = spm12_slice_timing(
-  	filename = realigned[['outfiles']],
-  	nslices = nslices,
-  	tr = tr, 
-  	slice_order = slice_order,
-  	ta = ta, 
-  	ref_slice = ref_slice,
-  	prefix = "a", 
-  	clean = FALSE, 
-  	retimg = FALSE)
+  
+  st_results = spm12_slice_timing(
+    filename = realigned[['outfiles']],
+    time_points = seq(n_time_points),
+    nslices = nslices,
+    tr = tr, 
+    slice_order = slice_order,
+    ta = ta, 
+    ref_slice = ref_slice,
+    prefix = "a", 
+    clean = FALSE, 
+    retimg = FALSE)
+  aimg = st_results$outfile
   print(aimg)
   mean_img = realigned[["mean"]]
   mean_nifti = readnii(mean_img)
+}
+
+## ------------------------------------------------------------------------
+if (!have_matlab()) {
+  run_fmri = filename_check(run_fmri)
 }
 
 ## ----acpc----------------------------------------------------------------
@@ -134,7 +178,7 @@ if (have_matlab()) {
   	bounding_box = bbox,
   	clean = FALSE
   	)
-  print(direct_norm)
+  print(names(direct_norm))
   dnorm_files = direct_norm$outfiles
   dnorm_mean_img = readnii(dnorm_files[1])
 }
@@ -163,8 +207,9 @@ if (have_matlab()) {
   seg_res = spm12_segment(
   	filename = coreg_anat,
   	set_origin = FALSE,
-  	retimg = FALSE)
-  print(seg_res)
+  	retimg = FALSE,
+  	clean = FALSE)
+  print(names(seg_res))
 }
 
 ## ----segs_to_hard--------------------------------------------------------
@@ -191,9 +236,8 @@ if (have_matlab()) {
   	deformation = seg_res$deformation,
   	other.files = c(coreg_anat, mean_img, aimg),
   	bounding_box = bbox,
-  	retimg = FALSE, 
-  	clean = FALSE)
-  print(norm)
+  	retimg = FALSE)
+  print(names(norm))
   norm_data = norm$outfiles
   names(norm_data) = c("anat", "mean", "fmri")
   norm_mean_img = readnii(norm_data["mean"])
@@ -241,7 +285,7 @@ if (have_matlab()) {
   	filename = norm_data["mean"],
   	prefix = "s",
   	retimg = FALSE
-  	)  
+  	)
   smoothed_mean_data = smoothed_mean$outfiles
 }
 
@@ -249,6 +293,12 @@ if (have_matlab()) {
 if (have_matlab()) {
   smooth_mean_img = readnii(smoothed_mean_data)
   ortho2(smooth_mean_img)
+}
+
+## ---- echo = FALSE-------------------------------------------------------
+rm(list = ls()); 
+for (i in 1:20) {
+  gc()
 }
 
 ## ------------------------------------------------------------------------
