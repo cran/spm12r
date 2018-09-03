@@ -12,10 +12,13 @@ knitr::opts_chunk$set(eval = have_matlab())
 ## ----makefiles-----------------------------------------------------------
 library(kirby21.t1)
 library(kirby21.fmri)
-stopifnot(download_fmri_data())
-stopifnot(download_t1_data())
-functional = get_fmri_filenames(ids = 113, visit = 1)
-anatomical = get_t1_filenames(ids = 113, visit = 1)
+install_dir = tempdir()
+outdir = tempfile()
+dir.create(outdir)
+stopifnot(download_fmri_data(outdir = outdir))
+stopifnot(download_t1_data(outdir = outdir))
+functional = get_fmri_filenames(ids = 113, visit = 1, outdir = outdir)
+anatomical = get_t1_filenames(ids = 113, visit = 1, outdir = outdir)
 files = c(anatomical = anatomical,
           functional = functional)
 files
@@ -92,8 +95,9 @@ if (have_matlab()) {
 	filename = run_fmri, 
 	register_to = "mean",
 	reslice = "mean",
-	clean = FALSE
-	)
+	clean = FALSE,
+	install_dir = install_dir
+  )
   print(names(realigned))
 }
 
@@ -146,7 +150,9 @@ if (have_matlab()) {
     ref_slice = ref_slice,
     prefix = "a", 
     clean = FALSE, 
-    retimg = FALSE)
+    retimg = FALSE,
+    install_dir = install_dir
+    )
   aimg = st_results$outfile
   print(aimg)
   mean_img = realigned[["mean"]]
@@ -162,7 +168,9 @@ if (!have_matlab()) {
 if (have_matlab()) {
   acpc_reorient(
     infiles = c(mean_img, aimg),
-    modality = "T1")
+    modality = "T1",
+    install_dir = install_dir
+    )
 }
 
 ## ----direct_norm---------------------------------------------------------
@@ -176,7 +184,8 @@ if (have_matlab()) {
   	filename = mean_img,
   	other.files = c(mean_img, aimg),
   	bounding_box = bbox,
-  	clean = FALSE
+  	clean = FALSE,
+    install_dir = install_dir
   	)
   print(names(direct_norm))
   dnorm_files = direct_norm$outfiles
@@ -190,12 +199,16 @@ if (have_matlab()) {
   print(anat_img)
   acpc_reorient(
     infiles = anat_img,
-    modality = "T1")
+    modality = "T1",
+    install_dir = install_dir
+    )
 
   coreg = spm12_coregister(
   	fixed = mean_img,
   	moving = anat_img,
-  	prefix = "r")
+  	prefix = "r",
+    install_dir = install_dir
+  	)
   
   coreg_anat = coreg$outfile
   coreg_img = readnii(coreg_anat)
@@ -208,7 +221,9 @@ if (have_matlab()) {
   	filename = coreg_anat,
   	set_origin = FALSE,
   	retimg = FALSE,
-  	clean = FALSE)
+  	clean = FALSE,
+    install_dir = install_dir
+  	)
   print(names(seg_res))
 }
 
@@ -236,7 +251,9 @@ if (have_matlab()) {
   	deformation = seg_res$deformation,
   	other.files = c(coreg_anat, mean_img, aimg),
   	bounding_box = bbox,
-  	retimg = FALSE)
+  	retimg = FALSE,
+    install_dir = install_dir
+  	)
   print(names(norm))
   norm_data = norm$outfiles
   names(norm_data) = c("anat", "mean", "fmri")
@@ -274,7 +291,8 @@ if (have_matlab()) {
   	filename = norm_data["fmri"],
   	fwhm = 8,
   	prefix = "s",
-  	retimg = FALSE
+  	retimg = FALSE,
+    install_dir = install_dir
   	)
   smoothed_data = smoothed$outfiles
 }
@@ -284,7 +302,8 @@ if (have_matlab()) {
   smoothed_mean = spm12_smooth(
   	filename = norm_data["mean"],
   	prefix = "s",
-  	retimg = FALSE
+  	retimg = FALSE,
+    install_dir = install_dir
   	)
   smoothed_mean_data = smoothed_mean$outfiles
 }

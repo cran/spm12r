@@ -10,6 +10,8 @@
 #' @param spmdir SPM dir to add, will use package default directory
 #' @param clean Remove scripts from temporary directory after running
 #' @param verbose Print diagnostic messages
+#' @param single_thread Should the flag \code{-singleCompThread} 
+#' be executed to limit MATLAB to a single computational thread? 
 #' @param ... Arguments to pass to \code{\link{spm12_script}}
 #' @export
 #' @importFrom matlabr run_matlab_script get_matlab run_matlab_code
@@ -22,8 +24,14 @@ run_spm12_script <- function(
   spmdir = spm_dir(verbose = verbose),
   clean = TRUE,
   verbose = TRUE,
+  single_thread = FALSE,
   ...
 ){
+  
+  # simple workup for CRAN
+  if (on_cran()) {
+    single_thread = TRUE
+  }
   
   scripts = build_spm12_script(
     script_name = script_name,
@@ -41,7 +49,8 @@ run_spm12_script <- function(
   }
   res = run_matlab_script(
     scripts["script"], 
-    verbose = verbose)
+    verbose = verbose,
+    single_thread = single_thread)
   if (verbose) {
     message(paste0("# Result is ", res, "\n"))
   }  
@@ -60,6 +69,7 @@ run_spm12_script <- function(
 
 #' @export
 #' @rdname run_spm12_script
+#' @param install_dir directory to download SPM12
 build_spm12_script <- function(
   script_name,
   jobvec = NULL,
@@ -67,9 +77,11 @@ build_spm12_script <- function(
   add_spm_dir = TRUE,
   spmdir = spm_dir(verbose = verbose),
   verbose = TRUE,
+  install_dir = NULL,
   ...
 ){
-  install_spm12(verbose = verbose)
+  install_spm12(verbose = verbose, 
+                install_dir = install_dir)
   
   scripts = spm12_script(script_name, ...)
   # put in the correct filenames

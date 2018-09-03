@@ -4,14 +4,15 @@
 \alias{spm12_normalize}
 \title{SPM12 Normalize (Estimate and Write)}
 \usage{
-spm12_normalize(filename, other.files = NULL, bounding_box = matrix(c(-90,
-  -126, -72, 90, 90, 108), nrow = 2, byrow = TRUE), biasreg = 0.001,
-  biasfwhm = 60, regularization = c(0, 0.001, 0.5, 0.05, 0.2),
-  affine = c("mni", "eastern", "subj", "none", ""), smoothness = 0,
-  sampling_distance = 3, voxel_size = c(2, 2, 2), interp = c("bspline4",
-  "nearestneighbor", "trilinear", paste0("bspline", 2:3), paste0("bspline",
-  5:7)), add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose),
-  clean = TRUE, verbose = TRUE, ...)
+spm12_normalize(filename, other.files = NULL,
+  bounding_box = matrix(c(-90, -126, -72, 90, 90, 108), nrow = 2, byrow =
+  TRUE), biasreg = 0.001, biasfwhm = 60, regularization = c(0, 0.001,
+  0.5, 0.05, 0.2), affine = c("mni", "eastern", "subj", "none", ""),
+  smoothness = 0, sampling_distance = 3, voxel_size = c(2, 2, 2),
+  interp = c("bspline4", "nearestneighbor", "trilinear",
+  paste0("bspline", 2:3), paste0("bspline", 5:7)), add_spm_dir = TRUE,
+  spmdir = spm_dir(verbose = verbose, install_dir = install_dir),
+  clean = TRUE, verbose = TRUE, install_dir = NULL, ...)
 }
 \arguments{
 \item{filename}{File to be normalized to the template}
@@ -51,6 +52,8 @@ of the written normalised images.}
 \item{clean}{Remove scripts from temporary directory after running}
 
 \item{verbose}{Print diagnostic messages}
+
+\item{install_dir}{directory to download SPM12}
 
 \item{...}{Arguments passed to \code{\link{run_spm12_script}}}
 }

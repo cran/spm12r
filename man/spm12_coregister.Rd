@@ -11,36 +11,40 @@
 \title{Batch SPM12 Coregister (Estimate and Reslice)}
 \usage{
 build_spm12_coregister(fixed, moving, other.files = NULL,
-  cost_fun = c("nmi", "ecc", "ncc"), separation = c(4, 2), tol = c(0.02,
-  0.02, 0.02, 0.001, 0.001, 0.001, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001),
-  fwhm = c(7, 7), interp = c("bspline4", "nearestneighbor", "trilinear",
-  paste0("bspline", 2:3), paste0("bspline", 5:7)), wrap_x = FALSE,
-  wrap_y = FALSE, wrap_z = FALSE, mask = FALSE, prefix = "r",
-  verbose = TRUE, ...)
+  cost_fun = c("nmi", "ecc", "ncc"), separation = c(4, 2),
+  tol = c(0.02, 0.02, 0.02, 0.001, 0.001, 0.001, 0.01, 0.01, 0.01, 0.001,
+  0.001, 0.001), fwhm = c(7, 7), interp = c("bspline4",
+  "nearestneighbor", "trilinear", paste0("bspline", 2:3), paste0("bspline",
+  5:7)), wrap_x = FALSE, wrap_y = FALSE, wrap_z = FALSE,
+  mask = FALSE, prefix = "r", verbose = TRUE, ...)
 
 build_spm12_coregister_estimate(fixed, moving, other.files = NULL,
-  cost_fun = c("nmi", "ecc", "ncc"), separation = c(4, 2), tol = c(0.02,
-  0.02, 0.02, 0.001, 0.001, 0.001, 0.01, 0.01, 0.01, 0.001, 0.001, 0.001),
-  fwhm = c(7, 7), verbose = TRUE, ...)
+  cost_fun = c("nmi", "ecc", "ncc"), separation = c(4, 2),
+  tol = c(0.02, 0.02, 0.02, 0.001, 0.001, 0.001, 0.01, 0.01, 0.01, 0.001,
+  0.001, 0.001), fwhm = c(7, 7), verbose = TRUE, ...)
 
 build_spm12_coregister_reslice(fixed, moving, interp = c("bspline4",
   "nearestneighbor", "trilinear", paste0("bspline", 2:3), paste0("bspline",
-  5:7)), wrap_x = FALSE, wrap_y = FALSE, wrap_z = FALSE, mask = FALSE,
-  prefix = "r", verbose = TRUE, ...)
+  5:7)), wrap_x = FALSE, wrap_y = FALSE, wrap_z = FALSE,
+  mask = FALSE, prefix = "r", verbose = TRUE, ...)
 
 spm12_coregister_wrapper(..., func = c("build_spm12_coregister",
   "build_spm12_coregister_reslice", "build_spm12_coregister_estimate"),
-  add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose), clean = TRUE,
-  verbose = TRUE, outdir = NULL)
+  add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose, install_dir =
+  install_dir), clean = TRUE, verbose = TRUE, outdir = NULL,
+  install_dir = NULL)
 
 spm12_coregister(..., add_spm_dir = TRUE, spmdir = spm_dir(verbose =
-  verbose), clean = TRUE, verbose = TRUE, outdir = NULL)
+  verbose, install_dir = install_dir), clean = TRUE, verbose = TRUE,
+  outdir = NULL, install_dir = NULL)
 
-spm12_coregister_estimate(..., add_spm_dir = TRUE, spmdir = spm_dir(verbose
-  = verbose), clean = TRUE, verbose = TRUE, outdir = NULL)
+spm12_coregister_estimate(..., add_spm_dir = TRUE,
+  spmdir = spm_dir(verbose = verbose, install_dir = install_dir),
+  clean = TRUE, verbose = TRUE, outdir = NULL, install_dir = NULL)
 
-spm12_coregister_reslice(..., add_spm_dir = TRUE, spmdir = spm_dir(verbose =
-  verbose), clean = TRUE, verbose = TRUE, outdir = NULL)
+spm12_coregister_reslice(..., add_spm_dir = TRUE,
+  spmdir = spm_dir(verbose = verbose, install_dir = install_dir),
+  clean = TRUE, verbose = TRUE, outdir = NULL, install_dir = NULL)
 }
 \arguments{
 \item{fixed}{File that is assumed fixed}
@@ -99,6 +103,8 @@ from outside  the  original  images.  Where  this  occurs,
 \item{outdir}{Directory to copy results.  If full filename 
 given, then results will
 be in \code{dirname(filename)}}
+
+\item{install_dir}{directory to download SPM12}
 }
 \value{
 List of output files, the \code{matlabbatch} object, 
@@ -118,15 +124,15 @@ moving = fname,
 other.files = fname,
 execute = FALSE)
 }
+if (matlabr::have_matlab()) {
+install_dir = tempdir()
 dims = rep(10, 3)
 fixed = array(rnorm(prod(dims)), dim = dims)
 fixed = oro.nifti::nifti(fixed)
 moving = array(rnorm(prod(dims)), dim = dims)
 moving = oro.nifti::nifti(moving) 
 res = build_spm12_coregister(
-fixed = fixed, moving = moving)
-if (matlabr::have_matlab()) {
-run = spm12_coregister(
-   fixed = fixed, moving = moving)
+fixed = fixed, moving = moving,
+install_dir = install_dir)
 }
 }

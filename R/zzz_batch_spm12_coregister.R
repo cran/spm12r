@@ -55,16 +55,16 @@
 #' other.files = fname,
 #' execute = FALSE)
 #' }
+#' if (matlabr::have_matlab()) {
+#' install_dir = tempdir()
 #' dims = rep(10, 3)
 #' fixed = array(rnorm(prod(dims)), dim = dims)
 #' fixed = oro.nifti::nifti(fixed)
 #' moving = array(rnorm(prod(dims)), dim = dims)
 #' moving = oro.nifti::nifti(moving) 
 #' res = build_spm12_coregister(
-#' fixed = fixed, moving = moving)
-#' if (matlabr::have_matlab()) {
-#' run = spm12_coregister(
-#'    fixed = fixed, moving = moving)
+#' fixed = fixed, moving = moving,
+#' install_dir = install_dir)
 #' }
 build_spm12_coregister <- function(
   fixed,
@@ -278,18 +278,22 @@ build_spm12_coregister_reslice <- function(
 
 
 #' @rdname spm12_coregister
+#' @param install_dir directory to download SPM12
 spm12_coregister_wrapper = function(
   ...,
   func = c("build_spm12_coregister",
            "build_spm12_coregister_reslice",
            "build_spm12_coregister_estimate"),
   add_spm_dir = TRUE,
-  spmdir = spm_dir(verbose = verbose),
+  spmdir = spm_dir(verbose = verbose,
+                   install_dir = install_dir),
   clean = TRUE,
   verbose = TRUE,
-  outdir = NULL
+  outdir = NULL,
+  install_dir = NULL
 ) {
-  install_spm12(verbose = verbose)
+  install_spm12(verbose = verbose, 
+                install_dir = install_dir)
   func = match.arg(func)
   args = list(...)
   args$verbose = verbose
@@ -340,10 +344,12 @@ spm12_coregister_wrapper = function(
 spm12_coregister = function(
   ...,
   add_spm_dir = TRUE,
-  spmdir = spm_dir(verbose = verbose),
+  spmdir = spm_dir(verbose = verbose,
+                   install_dir = install_dir),
   clean = TRUE,
   verbose = TRUE,
-  outdir = NULL
+  outdir = NULL,
+  install_dir = NULL
 ) {
   L = spm12_coregister_wrapper(
     ...,
@@ -352,7 +358,8 @@ spm12_coregister = function(
     spmdir = spmdir,
     clean = clean,
     verbose = verbose,
-    outdir = outdir
+    outdir = outdir,
+    install_dir = install_dir
   )
   return(L)
   
@@ -364,10 +371,12 @@ spm12_coregister = function(
 spm12_coregister_estimate = function(
   ...,
   add_spm_dir = TRUE,
-  spmdir = spm_dir(verbose = verbose),
+  spmdir = spm_dir(verbose = verbose,
+                   install_dir = install_dir),
   clean = TRUE,
   verbose = TRUE,
-  outdir = NULL
+  outdir = NULL,
+  install_dir = NULL
 ) {
   L = spm12_coregister_wrapper(
     ...,
@@ -376,7 +385,8 @@ spm12_coregister_estimate = function(
     spmdir = spmdir,
     clean = clean,
     verbose = verbose,
-    outdir = outdir
+    outdir = outdir,
+    install_dir = install_dir
   )
   return(L)
   
@@ -389,10 +399,12 @@ spm12_coregister_estimate = function(
 spm12_coregister_reslice = function(
   ...,
   add_spm_dir = TRUE,
-  spmdir = spm_dir(verbose = verbose),
+  spmdir = spm_dir(verbose = verbose,
+                   install_dir = install_dir),
   clean = TRUE,
   verbose = TRUE,
-  outdir = NULL
+  outdir = NULL,
+  install_dir = NULL
 ) {
   L = spm12_coregister_wrapper(
     ...,
@@ -401,7 +413,8 @@ spm12_coregister_reslice = function(
     spmdir = spmdir,
     clean = clean,
     verbose = verbose,
-    outdir = outdir
+    outdir = outdir,
+    install_dir = install_dir
   )
   return(L)
   

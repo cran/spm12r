@@ -12,6 +12,7 @@ knitr::opts_chunk$set(eval = have_matlab())
 
 ## ----makefiles-----------------------------------------------------------
 library(httr)
+install_dir = tempdir()
 url = paste0("https://ndownloader.figshare.com/articles/",
              "5442298/versions/1")
 zipfile = tempfile(fileext = ".zip")
@@ -92,7 +93,8 @@ if (have_matlab()) {
     register_to = "mean",
     est_interp = "bspline4",
     reslice_interp = "bspline4",
-    clean = FALSE
+    clean = FALSE,
+    install_dir = install_dir
   )
   ################################
   # reading in the mean image
@@ -134,7 +136,9 @@ if (have_matlab()) {
     ref_slice = ref_slice,
     prefix = "a", 
     clean = FALSE, 
-    retimg = FALSE)
+    retimg = FALSE,
+    install_dir = install_dir
+    )
   print(aimg)
 }
 
@@ -157,7 +161,9 @@ if (have_matlab()) {
     fixed = realigned[["mean"]], 
     moving = t1_fname, 
     cost_fun = "nmi",
-    retimg = FALSE)
+    retimg = FALSE,
+    install_dir = install_dir
+    )
 }
 
 ## ----seg-----------------------------------------------------------------
@@ -172,7 +178,9 @@ if (have_matlab()) {
     modulated = TRUE,
     affine = "mni",
     sampling_distance = 1.5,
-    retimg = FALSE)
+    retimg = FALSE,
+    install_dir = install_dir
+    )
   print(names(seg))
 }
 
@@ -186,7 +194,9 @@ if (have_matlab()) {
         78, 76, 85), nrow = 2, 
       byrow = TRUE),
     interp = "bspline5",
-    retimg = FALSE)
+    retimg = FALSE,
+    install_dir = install_dir
+    )
   
   anat_norm = spm12_normalize_write(
     deformation = seg$deformation,
@@ -197,7 +207,8 @@ if (have_matlab()) {
       byrow = TRUE),
     interp = "bspline5",
     voxel_size = c(1, 1, 1),
-    retimg = FALSE
+    retimg = FALSE,
+    install_dir = install_dir
   )
   
   anat_norm2x2x2 = spm12_normalize_write(
@@ -209,7 +220,8 @@ if (have_matlab()) {
       byrow = TRUE),
     interp = "bspline5",
     voxel_size = c(2, 2, 2),
-    retimg = FALSE
+    retimg = FALSE,
+    install_dir = install_dir
   )  
 }
 
@@ -219,7 +231,9 @@ if (have_matlab()) {
     norm$outfiles[[1]], 
     fwhm = 5, 
     prefix = "s5",
-    retimg = FALSE)
+    retimg = FALSE,
+    install_dir = install_dir
+    )
 }
 
 ## ----first_model---------------------------------------------------------
@@ -252,7 +266,8 @@ if (have_matlab()) {
     condition_list = condition_list,
     regressor_mat = rpfile,
     outdir = output_directory,
-    clean = FALSE
+    clean = FALSE,
+    install_dir = install_dir
   )
   
   cons = list.files(
@@ -288,7 +303,8 @@ if (have_matlab()) {
     spm = first_model$spmmat,
     delete_existing = TRUE,
     contrast_list = contrasts,
-    clean = FALSE
+    clean = FALSE,
+    install_dir = install_dir
   )
 }
 
@@ -345,7 +361,9 @@ if (have_matlab()) {
     display = display,
     desktop = FALSE,
     write_images = "binary_clusters",
-    image_basename = "thresholded")
+    image_basename = "thresholded",
+    install_dir = install_dir
+    )
   out_results = list.files(
     pattern = paste0("spm.*[.]", result_format),
     path = output_directory,

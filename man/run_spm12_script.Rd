@@ -6,12 +6,12 @@
 \title{Wrapper for running \code{spm12_script}}
 \usage{
 run_spm12_script(script_name, jobvec = NULL, mvec = NULL,
-  add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose), clean = TRUE,
-  verbose = TRUE, ...)
+  add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose),
+  clean = TRUE, verbose = TRUE, single_thread = FALSE, ...)
 
 build_spm12_script(script_name, jobvec = NULL, mvec = NULL,
-  add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose), verbose = TRUE,
-  ...)
+  add_spm_dir = TRUE, spmdir = spm_dir(verbose = verbose),
+  verbose = TRUE, install_dir = NULL, ...)
 }
 \arguments{
 \item{script_name}{Name of the script filename without .m ext,
@@ -29,7 +29,12 @@ passed to \code{\link{spm12_script}}}
 
 \item{verbose}{Print diagnostic messages}
 
+\item{single_thread}{Should the flag \code{-singleCompThread} 
+be executed to limit MATLAB to a single computational thread?}
+
 \item{...}{Arguments to pass to \code{\link{spm12_script}}}
+
+\item{install_dir}{directory to download SPM12}
 }
 \value{
 Result of \code{\link{run_matlab_script}}
