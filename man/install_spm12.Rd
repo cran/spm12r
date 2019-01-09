@@ -20,6 +20,11 @@ Install spm12 scripts to spm12r for script capabilities
 \examples{
 tdir = tempfile()
 dir.create(tdir)
+in_ci <- function() {
+nzchar(Sys.getenv("CI"))
+}
+if (.Platform$OS.type == "unix" | in_ci()) { # windows problem
 res = install_spm12(install_dir = tdir)
 res = install_spm12(install_dir = tdir)
+}
 }
