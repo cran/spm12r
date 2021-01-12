@@ -4,15 +4,26 @@
 \alias{spm12_normalize}
 \title{SPM12 Normalize (Estimate and Write)}
 \usage{
-spm12_normalize(filename, other.files = NULL,
-  bounding_box = matrix(c(-90, -126, -72, 90, 90, 108), nrow = 2, byrow =
-  TRUE), biasreg = 0.001, biasfwhm = 60, regularization = c(0, 0.001,
-  0.5, 0.05, 0.2), affine = c("mni", "eastern", "subj", "none", ""),
-  smoothness = 0, sampling_distance = 3, voxel_size = c(2, 2, 2),
-  interp = c("bspline4", "nearestneighbor", "trilinear",
-  paste0("bspline", 2:3), paste0("bspline", 5:7)), add_spm_dir = TRUE,
+spm12_normalize(
+  filename,
+  other.files = NULL,
+  bounding_box = matrix(c(-90, -126, -72, 90, 90, 108), nrow = 2, byrow = TRUE),
+  biasreg = 0.001,
+  biasfwhm = 60,
+  regularization = c(0, 0.001, 0.5, 0.05, 0.2),
+  affine = c("mni", "eastern", "subj", "none", ""),
+  smoothness = 0,
+  sampling_distance = 3,
+  voxel_size = c(2, 2, 2),
+  interp = c("bspline4", "nearestneighbor", "trilinear", paste0("bspline", 2:3),
+    paste0("bspline", 5:7)),
+  add_spm_dir = TRUE,
   spmdir = spm_dir(verbose = verbose, install_dir = install_dir),
-  clean = TRUE, verbose = TRUE, install_dir = NULL, ...)
+  clean = TRUE,
+  verbose = TRUE,
+  install_dir = NULL,
+  ...
+)
 }
 \arguments{
 \item{filename}{File to be normalized to the template}
@@ -35,10 +46,11 @@ registration}
 
 \item{smoothness}{FWHM of smoothing done}
 
-\item{sampling_distance}{smoothingess of the warping field. 
+\item{sampling_distance}{smoothness of the warping field. 
 This is used to derive a fudge factor to account for 
-correlations between neighbouring voxels.  Smoother data have 
-more}
+correlations between neighbouring voxels.  
+Approximate distance between sampled points when estimating 
+the model parameters.}
 
 \item{voxel_size}{The voxel sizes (x, y & z, in mm) 
 of the written normalised images.}

@@ -1,45 +1,107 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <meta name="author" content="John Muschelli" />
 
-<meta name="date" content="2019-01-08" />
+<meta name="date" content="2021-01-12" />
 
 <title>Preprocessing and First Level Model for Task fMRI</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+<style type="text/css">
+a.anchor-section {margin-left: 10px; visibility: hidden; color: inherit;}
+a.anchor-section::before {content: '#';}
+.hasAnchor:hover a.anchor-section {visibility: visible;}
+</style>
+<script>// Anchor sections v1.0 written by Atsushi Yasumoto on Oct 3rd, 2020.
+document.addEventListener('DOMContentLoaded', function() {
+  // Do nothing if AnchorJS is used
+  if (typeof window.anchors === 'object' && anchors.hasOwnProperty('hasAnchorJSLink')) {
+    return;
+  }
+
+  const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+  // Do nothing if sections are already anchored
+  if (Array.from(h).some(x => x.classList.contains('hasAnchor'))) {
+    return null;
+  }
+
+  // Use section id when pandoc runs with --section-divs
+  const section_id = function(x) {
+    return ((x.classList.contains('section') || (x.tagName === 'SECTION'))
+            ? x.id : '');
+  };
+
+  // Add anchors
+  h.forEach(function(x) {
+    const id = x.id || section_id(x.parentElement);
+    if (id === '') {
+      return null;
+    }
+    let anchor = document.createElement('a');
+    anchor.href = '#' + id;
+    anchor.classList = ['anchor-section'];
+    x.classList.add('hasAnchor');
+    x.appendChild(anchor);
+  });
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
 }
 @media print {
-code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -48,9 +110,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; font-weight: bold; } /* Alert */
 code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
@@ -96,7 +158,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -117,9 +179,6 @@ padding-right: 2em;
 font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 font-size: 14px;
 line-height: 1.35;
-}
-#header {
-text-align: center;
 }
 #TOC {
 clear: both;
@@ -288,8 +347,12 @@ code > span.st { color: #d14; }
 code > span.co { color: #888888; font-style: italic; } 
 code > span.ot { color: #007020; } 
 code > span.al { color: #ff0000; font-weight: bold; } 
-code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
 </style>
+
+
+
 
 </head>
 
@@ -299,8 +362,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 
 <h1 class="title toc-ignore">Preprocessing and First Level Model for Task fMRI</h1>
-<h4 class="author"><em>John Muschelli</em></h4>
-<h4 class="date"><em>2019-01-08</em></h4>
+<h4 class="author">John Muschelli</h4>
+<h4 class="date">2021-01-12</h4>
 
 
 
@@ -318,64 +381,64 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </div>
 <div id="data-used" class="section level1">
 <h1>Data used</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(httr)</a>
-<a class="sourceLine" id="cb1-2" title="2">install_dir =<span class="st"> </span><span class="kw">tempdir</span>()</a>
-<a class="sourceLine" id="cb1-3" title="3">url =<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;https://ndownloader.figshare.com/articles/&quot;</span>,</a>
-<a class="sourceLine" id="cb1-4" title="4">             <span class="st">&quot;5442298/versions/1&quot;</span>)</a>
-<a class="sourceLine" id="cb1-5" title="5">zipfile =<span class="st"> </span><span class="kw">tempfile</span>(<span class="dt">fileext =</span> <span class="st">&quot;.zip&quot;</span>)</a>
-<a class="sourceLine" id="cb1-6" title="6">res =<span class="st"> </span><span class="kw">GET</span>(</a>
-<a class="sourceLine" id="cb1-7" title="7">  url, </a>
-<a class="sourceLine" id="cb1-8" title="8">  <span class="kw">write_disk</span>(<span class="dt">path =</span> zipfile),</a>
-<a class="sourceLine" id="cb1-9" title="9">  <span class="cf">if</span> (<span class="kw">interactive</span>()) <span class="kw">progress</span>())</a>
-<a class="sourceLine" id="cb1-10" title="10">run_dir =<span class="st"> </span><span class="kw">tempfile</span>()</a>
-<a class="sourceLine" id="cb1-11" title="11"><span class="cf">if</span> (<span class="op">!</span><span class="kw">dir.exists</span>(run_dir)) {</a>
-<a class="sourceLine" id="cb1-12" title="12">  <span class="kw">dir.create</span>(run_dir)</a>
-<a class="sourceLine" id="cb1-13" title="13">}</a>
-<a class="sourceLine" id="cb1-14" title="14">out_files =<span class="st"> </span>utils<span class="op">::</span><span class="kw">unzip</span>(zipfile, <span class="dt">exdir =</span> run_dir)</a>
-<a class="sourceLine" id="cb1-15" title="15"><span class="kw">names</span>(out_files) =<span class="st"> </span>neurobase<span class="op">::</span><span class="kw">nii.stub</span>(</a>
-<a class="sourceLine" id="cb1-16" title="16">  out_files, <span class="dt">bn =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb1-17" title="17"><span class="kw">file.remove</span>(zipfile)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(httr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>install_dir =<span class="st"> </span><span class="kw">tempdir</span>()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>url =<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;https://ndownloader.figshare.com/articles/&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>             <span class="st">&quot;5442298/versions/1&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>zipfile =<span class="st"> </span><span class="kw">tempfile</span>(<span class="dt">fileext =</span> <span class="st">&quot;.zip&quot;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>res =<span class="st"> </span><span class="kw">GET</span>(</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>  url, </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>  <span class="kw">write_disk</span>(<span class="dt">path =</span> zipfile),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>  <span class="cf">if</span> (<span class="kw">interactive</span>()) <span class="kw">progress</span>())</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>run_dir =<span class="st"> </span><span class="kw">tempfile</span>()</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="cf">if</span> (<span class="op">!</span><span class="kw">dir.exists</span>(run_dir)) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>  <span class="kw">dir.create</span>(run_dir)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>}</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>out_files =<span class="st"> </span>utils<span class="op">::</span><span class="kw">unzip</span>(zipfile, <span class="dt">exdir =</span> run_dir)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a><span class="kw">names</span>(out_files) =<span class="st"> </span>neurobase<span class="op">::</span><span class="kw">nii.stub</span>(</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>  out_files, <span class="dt">bn =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a><span class="kw">file.remove</span>(zipfile)</span></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 <p>We know the repetition time (TR) is 2 seconds for this data. It may be encoded in the NIfTI file itself or come from a parameter file from the scanner. We will drop the first 20 seconds to allow for signal stabilization.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">library</span>(neurobase)</a>
-<a class="sourceLine" id="cb3-2" title="2"><span class="co">##################################</span></a>
-<a class="sourceLine" id="cb3-3" title="3"><span class="co"># Added quick reading of nifti header</span></a>
-<a class="sourceLine" id="cb3-4" title="4"><span class="co">##################################</span></a>
-<a class="sourceLine" id="cb3-5" title="5">oro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;oro.nifti&quot;</span>)</a>
-<a class="sourceLine" id="cb3-6" title="6">neuro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;neurobase&quot;</span>)</a>
-<a class="sourceLine" id="cb3-7" title="7"><span class="cf">if</span> (oro_pkg <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.8</span> <span class="op">||</span><span class="st"> </span>neuro_pkg <span class="op">&lt;</span><span class="st"> </span><span class="fl">1.22</span>) {</a>
-<a class="sourceLine" id="cb3-8" title="8">  get_nifti =<span class="st"> </span>neurobase<span class="op">::</span>check_nifti </a>
-<a class="sourceLine" id="cb3-9" title="9">} <span class="cf">else</span> {</a>
-<a class="sourceLine" id="cb3-10" title="10">  get_nifti =<span class="st"> </span>neurobase<span class="op">::</span>check_nifti_header</a>
-<a class="sourceLine" id="cb3-11" title="11">}</a>
-<a class="sourceLine" id="cb3-12" title="12"></a>
-<a class="sourceLine" id="cb3-13" title="13">fmri_filename =<span class="st"> </span>out_files[<span class="st">&quot;fmri&quot;</span>]</a>
-<a class="sourceLine" id="cb3-14" title="14">t1_fname =<span class="st"> </span>out_files[<span class="st">&quot;anat&quot;</span>]</a>
-<a class="sourceLine" id="cb3-15" title="15">tr =<span class="st"> </span><span class="fl">1.8</span> <span class="co"># seconds</span></a>
-<a class="sourceLine" id="cb3-16" title="16">hdr =<span class="st"> </span><span class="kw">get_nifti</span>(fmri_filename) <span class="co"># getting nifti header</span></a>
-<a class="sourceLine" id="cb3-17" title="17"></a>
-<a class="sourceLine" id="cb3-18" title="18">nslices =<span class="st"> </span>oro.nifti<span class="op">::</span><span class="kw">nsli</span>(hdr)</a>
-<a class="sourceLine" id="cb3-19" title="19">n_time_points =<span class="st"> </span>oro.nifti<span class="op">::</span><span class="kw">ntim</span>(hdr)</a>
-<a class="sourceLine" id="cb3-20" title="20">time_points =<span class="st"> </span><span class="kw">seq</span>(n_time_points)</a>
-<a class="sourceLine" id="cb3-21" title="21">ta =<span class="st"> </span><span class="dv">0</span></a>
-<a class="sourceLine" id="cb3-22" title="22">slice_order =<span class="st"> </span><span class="kw">c</span>(</a>
-<a class="sourceLine" id="cb3-23" title="23">  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, </a>
-<a class="sourceLine" id="cb3-24" title="24">  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, </a>
-<a class="sourceLine" id="cb3-25" title="25">  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, </a>
-<a class="sourceLine" id="cb3-26" title="26">  <span class="dv">420</span>, <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>, </a>
-<a class="sourceLine" id="cb3-27" title="27">  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, </a>
-<a class="sourceLine" id="cb3-28" title="28">  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, </a>
-<a class="sourceLine" id="cb3-29" title="29">  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, <span class="dv">420</span>, </a>
-<a class="sourceLine" id="cb3-30" title="30">  <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb3-31" title="31">ref_slice =<span class="st"> </span><span class="dv">900</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">library</span>(neurobase)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="co">##################################</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="co"># Added quick reading of nifti header</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="co">##################################</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>oro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;oro.nifti&quot;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>neuro_pkg =<span class="st"> </span><span class="kw">packageVersion</span>(<span class="st">&quot;neurobase&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="cf">if</span> (oro_pkg <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.8</span> <span class="op">||</span><span class="st"> </span>neuro_pkg <span class="op">&lt;</span><span class="st"> </span><span class="fl">1.22</span>) {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>  get_nifti =<span class="st"> </span>neurobase<span class="op">::</span>check_nifti </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>} <span class="cf">else</span> {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>  get_nifti =<span class="st"> </span>neurobase<span class="op">::</span>check_nifti_header</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>}</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>fmri_filename =<span class="st"> </span>out_files[<span class="st">&quot;fmri&quot;</span>]</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>t1_fname =<span class="st"> </span>out_files[<span class="st">&quot;anat&quot;</span>]</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>tr =<span class="st"> </span><span class="fl">1.8</span> <span class="co"># seconds</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a>hdr =<span class="st"> </span><span class="kw">get_nifti</span>(fmri_filename) <span class="co"># getting nifti header</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>nslices =<span class="st"> </span>oro.nifti<span class="op">::</span><span class="kw">nsli</span>(hdr)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a>n_time_points =<span class="st"> </span>oro.nifti<span class="op">::</span><span class="kw">ntim</span>(hdr)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a>time_points =<span class="st"> </span><span class="kw">seq</span>(n_time_points)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a>ta =<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a>slice_order =<span class="st"> </span><span class="kw">c</span>(</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true"></a>  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true"></a>  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true"></a>  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, </span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true"></a>  <span class="dv">420</span>, <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>, </span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true"></a>  <span class="dv">1740</span>, <span class="dv">1680</span>, <span class="dv">1620</span>, <span class="dv">1560</span>, <span class="dv">1500</span>, <span class="dv">1440</span>, <span class="dv">1380</span>, </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true"></a>  <span class="dv">1320</span>, <span class="dv">1260</span>, <span class="dv">1200</span>, <span class="dv">1140</span>, <span class="dv">1080</span>, <span class="dv">1020</span>, <span class="dv">960</span>, </span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true"></a>  <span class="dv">900</span>, <span class="dv">840</span>, <span class="dv">780</span>, <span class="dv">720</span>, <span class="dv">660</span>, <span class="dv">600</span>, <span class="dv">540</span>, <span class="dv">480</span>, <span class="dv">420</span>, </span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true"></a>  <span class="dv">360</span>, <span class="dv">300</span>, <span class="dv">240</span>, <span class="dv">180</span>, <span class="dv">120</span>, <span class="dv">60</span>, <span class="dv">0</span>)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true"></a>ref_slice =<span class="st"> </span><span class="dv">900</span></span></code></pre></div>
 </div>
 <div id="checking-matlab" class="section level1">
 <h1>Checking MATLAB</h1>
 <p>As SPM requires MATLAB and calls all the functions through the <code>matlabr</code> package, we will have checks in this vignette/workflow that the user has MATLAB. The <code>have_matlab()</code> function returns a logical that is <code>TRUE</code> when <code>matlabr</code> can find MATLAB to run the subsequent commands.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">library</span>(matlabr)</a>
-<a class="sourceLine" id="cb4-2" title="2"><span class="kw">have_matlab</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">library</span>(matlabr)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">have_matlab</span>()</span></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="kw">have_matlab</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">have_matlab</span>()</span></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 <p>If this is not <code>TRUE</code>, almost none of the functionality below will run because it would simply result in errors.</p>
 </div>
@@ -385,56 +448,56 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="image-realignment" class="section level2">
 <h2>Image Realignment</h2>
 <p>Realignment is referring to in this case as within-subject registration of the 4D fMRI data.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">library</span>(spm12r)</a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="co">####################################</span></a>
-<a class="sourceLine" id="cb8-3" title="3"><span class="co"># Realignment</span></a>
-<a class="sourceLine" id="cb8-4" title="4"><span class="co">####################################</span></a>
-<a class="sourceLine" id="cb8-5" title="5"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb8-6" title="6">  </a>
-<a class="sourceLine" id="cb8-7" title="7">  realigned =<span class="st"> </span><span class="kw">spm12_realign</span>( </a>
-<a class="sourceLine" id="cb8-8" title="8">    <span class="dt">filename =</span> fmri_filename,</a>
-<a class="sourceLine" id="cb8-9" title="9">    <span class="dt">time_points =</span> time_points,</a>
-<a class="sourceLine" id="cb8-10" title="10">    <span class="dt">quality =</span> <span class="fl">0.98</span>, </a>
-<a class="sourceLine" id="cb8-11" title="11">    <span class="dt">separation =</span> <span class="dv">3</span>,</a>
-<a class="sourceLine" id="cb8-12" title="12">    <span class="dt">register_to =</span> <span class="st">&quot;mean&quot;</span>,</a>
-<a class="sourceLine" id="cb8-13" title="13">    <span class="dt">est_interp =</span> <span class="st">&quot;bspline4&quot;</span>,</a>
-<a class="sourceLine" id="cb8-14" title="14">    <span class="dt">reslice_interp =</span> <span class="st">&quot;bspline4&quot;</span>,</a>
-<a class="sourceLine" id="cb8-15" title="15">    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb8-16" title="16">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb8-17" title="17">  )</a>
-<a class="sourceLine" id="cb8-18" title="18">  <span class="co">################################</span></a>
-<a class="sourceLine" id="cb8-19" title="19">  <span class="co"># reading in the mean image</span></a>
-<a class="sourceLine" id="cb8-20" title="20">  <span class="co">##########################</span></a>
-<a class="sourceLine" id="cb8-21" title="21">  mean_img =<span class="st"> </span>realigned[[<span class="st">&quot;mean&quot;</span>]]</a>
-<a class="sourceLine" id="cb8-22" title="22">  mean_nifti =<span class="st"> </span><span class="kw">readnii</span>(mean_img)</a>
-<a class="sourceLine" id="cb8-23" title="23">  </a>
-<a class="sourceLine" id="cb8-24" title="24">  rpfile =<span class="st"> </span>realigned[[<span class="st">&#39;rp&#39;</span>]]</a>
-<a class="sourceLine" id="cb8-25" title="25">  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb8-26" title="26">}</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">library</span>(spm12r)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="co">####################################</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="co"># Realignment</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="co">####################################</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>  </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>  realigned =<span class="st"> </span><span class="kw">spm12_realign</span>( </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>    <span class="dt">filename =</span> fmri_filename,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>    <span class="dt">time_points =</span> time_points,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>    <span class="dt">quality =</span> <span class="fl">0.98</span>, </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>    <span class="dt">separation =</span> <span class="dv">3</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true"></a>    <span class="dt">register_to =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true"></a>    <span class="dt">est_interp =</span> <span class="st">&quot;bspline4&quot;</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true"></a>    <span class="dt">reslice_interp =</span> <span class="st">&quot;bspline4&quot;</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true"></a>    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true"></a>  )</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true"></a>  <span class="co">################################</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true"></a>  <span class="co"># reading in the mean image</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true"></a>  <span class="co">##########################</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true"></a>  mean_img =<span class="st"> </span>realigned[[<span class="st">&quot;mean&quot;</span>]]</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true"></a>  mean_nifti =<span class="st"> </span><span class="kw">readnii</span>(mean_img)</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true"></a>  </span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true"></a>  rpfile =<span class="st"> </span>realigned[[<span class="st">&#39;rp&#39;</span>]]</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true"></a>  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>## # Reslice is all+mean</code></pre>
 <pre><code>## # Running matlabbatch job</code></pre>
 <pre><code>## # Creating matlabbatch job</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12\n</code></pre>
-<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba06f4e2508.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba065a5e8aa.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12\n</code></pre>
+<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5707906ba.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b530989182.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba06f4e2508.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5707906ba.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <p>Overall the <code>spm12_realign</code> does the realignment. There is some discussion of performing realignment <strong>before</strong> slice-timing correction because estimation of motion parameters may be skewed after slice-timing correction. We see that the output <code>realigned</code> has the output 4D fMRI data (<code>outfiles</code>), the realignment parameters (<code>rp</code>), voxel-wise mean after realignment (<code>mean</code>), and the matrix of transformations for the 4D series (<code>mat</code>).</p>
 <div id="reading-in-the-rp-file" class="section level3">
 <h3>Reading in the RP file</h3>
 <p>Here we can read in the <code>rp</code> file to show the estimated parameters. These can be used as regressors in motion correction for further analyses.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="co">####################################</span></a>
-<a class="sourceLine" id="cb17-2" title="2"><span class="co"># Read in Motion data</span></a>
-<a class="sourceLine" id="cb17-3" title="3"><span class="co">####################################</span></a>
-<a class="sourceLine" id="cb17-4" title="4"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb17-5" title="5">  rpfile =<span class="st"> </span>realigned[[<span class="st">&#39;rp&#39;</span>]]</a>
-<a class="sourceLine" id="cb17-6" title="6">  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb17-7" title="7">  <span class="kw">colnames</span>(rp) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;z&quot;</span>, </a>
-<a class="sourceLine" id="cb17-8" title="8">                   <span class="st">&quot;roll&quot;</span>, <span class="st">&quot;pitch&quot;</span>, <span class="st">&quot;yaw&quot;</span>)</a>
-<a class="sourceLine" id="cb17-9" title="9">  rp =<span class="st"> </span><span class="kw">as.matrix</span>(rp)</a>
-<a class="sourceLine" id="cb17-10" title="10">  <span class="kw">print</span>(<span class="kw">head</span>(rp))</a>
-<a class="sourceLine" id="cb17-11" title="11">  <span class="kw">print</span>(<span class="kw">dim</span>(rp))</a>
-<a class="sourceLine" id="cb17-12" title="12">}</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="co">####################################</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="co"># Read in Motion data</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="co">####################################</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>  rpfile =<span class="st"> </span>realigned[[<span class="st">&#39;rp&#39;</span>]]</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a>  rp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file =</span> rpfile, <span class="dt">header =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true"></a>  <span class="kw">colnames</span>(rp) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;z&quot;</span>, </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true"></a>                   <span class="st">&quot;roll&quot;</span>, <span class="st">&quot;pitch&quot;</span>, <span class="st">&quot;yaw&quot;</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true"></a>  rp =<span class="st"> </span><span class="kw">as.matrix</span>(rp)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true"></a>  <span class="kw">print</span>(<span class="kw">head</span>(rp))</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true"></a>  <span class="kw">print</span>(<span class="kw">dim</span>(rp))</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>##                 x           y            z          roll         pitch
 ## [1,] 0.0000000000  0.00000000  0.000000000  0.0000000000  0.000000e+00
 ## [2,] 0.0048211607 -0.05013463 -0.060077472 -0.0004428566  6.155483e-05
@@ -455,39 +518,39 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="slice-timing-correction" class="section level2">
 <h2>Slice-Timing Correction</h2>
 <p>A slice-timing correction does interpolation since each slice was not actually taken at the same time point, but a shifted time point over the course of an entire TR. The correction requires you to input the reference slice (in this case the median, <code>ref_slice</code>), the repetition time (<code>tr</code>), time between the first and the last slice within one scan (<code>ta</code>), and the order the slices were acquired. In our case, it was done in an ascending, contiguous order, so we created the slice order as such. If you used descending or interleaved acquisition, then this must be changed accordingly.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1"><span class="co">####################################</span></a>
-<a class="sourceLine" id="cb19-2" title="2"><span class="co"># Slice Timing Correction</span></a>
-<a class="sourceLine" id="cb19-3" title="3"><span class="co">####################################</span></a>
-<a class="sourceLine" id="cb19-4" title="4"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb19-5" title="5">  </a>
-<a class="sourceLine" id="cb19-6" title="6">  aimg =<span class="st"> </span><span class="kw">spm12_slice_timing</span>(</a>
-<a class="sourceLine" id="cb19-7" title="7">    <span class="dt">filename =</span> realigned[[<span class="st">&#39;outfiles&#39;</span>]],</a>
-<a class="sourceLine" id="cb19-8" title="8">    <span class="dt">nslices =</span> nslices,</a>
-<a class="sourceLine" id="cb19-9" title="9">    <span class="dt">tr =</span> tr, </a>
-<a class="sourceLine" id="cb19-10" title="10">    <span class="dt">slice_order =</span> slice_order,</a>
-<a class="sourceLine" id="cb19-11" title="11">    <span class="dt">time_points =</span> <span class="kw">seq</span>(n_time_points),</a>
-<a class="sourceLine" id="cb19-12" title="12">    <span class="dt">ta =</span> ta, </a>
-<a class="sourceLine" id="cb19-13" title="13">    <span class="dt">ref_slice =</span> ref_slice,</a>
-<a class="sourceLine" id="cb19-14" title="14">    <span class="dt">prefix =</span> <span class="st">&quot;a&quot;</span>, </a>
-<a class="sourceLine" id="cb19-15" title="15">    <span class="dt">clean =</span> <span class="ot">FALSE</span>, </a>
-<a class="sourceLine" id="cb19-16" title="16">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb19-17" title="17">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb19-18" title="18">    )</a>
-<a class="sourceLine" id="cb19-19" title="19">  <span class="kw">print</span>(aimg)</a>
-<a class="sourceLine" id="cb19-20" title="20">}</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="co">####################################</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="co"># Slice Timing Correction</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a><span class="co">####################################</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a>  </span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true"></a>  aimg =<span class="st"> </span><span class="kw">spm12_slice_timing</span>(</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true"></a>    <span class="dt">filename =</span> realigned[[<span class="st">&#39;outfiles&#39;</span>]],</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true"></a>    <span class="dt">nslices =</span> nslices,</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true"></a>    <span class="dt">tr =</span> tr, </span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true"></a>    <span class="dt">slice_order =</span> slice_order,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true"></a>    <span class="dt">time_points =</span> <span class="kw">seq</span>(n_time_points),</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true"></a>    <span class="dt">ta =</span> ta, </span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true"></a>    <span class="dt">ref_slice =</span> ref_slice,</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true"></a>    <span class="dt">prefix =</span> <span class="st">&quot;a&quot;</span>, </span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true"></a>    <span class="dt">clean =</span> <span class="ot">FALSE</span>, </span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true"></a>    )</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true"></a>  <span class="kw">print</span>(aimg)</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>## # Running matlabbatch job</code></pre>
 <pre><code>## # Creating matlabbatch job</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12\n</code></pre>
-<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba05724cc42.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba053fc4539.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12\n</code></pre>
+<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b574424b3.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5eca5b9b.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba05724cc42.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b574424b3.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## $spm
 ## $spm
 ## $spm$temporal
 ## $spm$temporal$st
 ## $spm$temporal$st$scans
-## [1] &quot;{{&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,1&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,2&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,3&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,4&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,5&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,6&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,7&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,8&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,9&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,10&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,11&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,12&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,13&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,14&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,15&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,16&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,17&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,18&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,19&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,20&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,21&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,22&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,23&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,24&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,25&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,26&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,27&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,28&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,29&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,30&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,31&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,32&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,33&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,34&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,35&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,36&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,37&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,38&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,39&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,40&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,41&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,42&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,43&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,44&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,45&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,46&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,47&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,48&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,49&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,50&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,51&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,52&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,53&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,54&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,55&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,56&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,57&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,58&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,59&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,60&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,61&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,62&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,63&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,64&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,65&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,66&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,67&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,68&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,69&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,70&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,71&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,72&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,73&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,74&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,75&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,76&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,77&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,78&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,79&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,80&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,81&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,82&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,83&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,84&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,85&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,86&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,87&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,88&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,89&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,90&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,91&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,92&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,93&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,94&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,95&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,96&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,97&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,98&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,99&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,100&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,101&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,102&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,103&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,104&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,105&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,106&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,107&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,108&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,109&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,110&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,111&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,112&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,113&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,114&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,115&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,116&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,117&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,118&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,119&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,120&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,121&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,122&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,123&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,124&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,125&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,126&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,127&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,128&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,129&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,130&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,131&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,132&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,133&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,134&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,135&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,136&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,137&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,138&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,139&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,140&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,141&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,142&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,143&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,144&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,145&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,146&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,147&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,148&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,149&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,150&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,151&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,152&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,153&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,154&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,155&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,156&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,157&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,158&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,159&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,160&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,161&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,162&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,163&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,164&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,165&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,166&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,167&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,168&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,169&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,170&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,171&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,172&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,173&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,174&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,175&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,176&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,177&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,178&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,179&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,180&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,181&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,182&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,183&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,184&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,185&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,186&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,187&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,188&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,189&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,190&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,191&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,192&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,193&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,194&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,195&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,196&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,197&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,198&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,199&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,200&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,201&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,202&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,203&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,204&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,205&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,206&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,207&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,208&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,209&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,210&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,211&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,212&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,213&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,214&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,215&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,216&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,217&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,218&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,219&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,220&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,221&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,222&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,223&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,224&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,225&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,226&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,227&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,228&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,229&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,230&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,231&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,232&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,233&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,234&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,235&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,236&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,237&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,238&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,239&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,240&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,241&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,242&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,243&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,244&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,245&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,246&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,247&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,248&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,249&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,250&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,251&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,252&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,253&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,254&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,255&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,256&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,257&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,258&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,259&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,260&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,261&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,262&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,263&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,264&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,265&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,266&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,267&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,268&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,269&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,270&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,271&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,272&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,273&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,274&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,275&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,276&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,277&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,278&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,279&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795/rfmri.nii,280&#39;\n}\n}&#39;;&quot;
+## [1] &quot;{{&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,1&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,2&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,3&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,4&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,5&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,6&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,7&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,8&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,9&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,10&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,11&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,12&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,13&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,14&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,15&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,16&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,17&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,18&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,19&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,20&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,21&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,22&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,23&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,24&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,25&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,26&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,27&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,28&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,29&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,30&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,31&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,32&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,33&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,34&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,35&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,36&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,37&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,38&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,39&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,40&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,41&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,42&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,43&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,44&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,45&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,46&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,47&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,48&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,49&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,50&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,51&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,52&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,53&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,54&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,55&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,56&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,57&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,58&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,59&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,60&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,61&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,62&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,63&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,64&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,65&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,66&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,67&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,68&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,69&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,70&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,71&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,72&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,73&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,74&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,75&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,76&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,77&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,78&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,79&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,80&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,81&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,82&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,83&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,84&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,85&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,86&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,87&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,88&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,89&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,90&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,91&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,92&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,93&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,94&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,95&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,96&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,97&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,98&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,99&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,100&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,101&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,102&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,103&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,104&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,105&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,106&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,107&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,108&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,109&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,110&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,111&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,112&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,113&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,114&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,115&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,116&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,117&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,118&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,119&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,120&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,121&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,122&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,123&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,124&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,125&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,126&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,127&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,128&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,129&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,130&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,131&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,132&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,133&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,134&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,135&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,136&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,137&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,138&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,139&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,140&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,141&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,142&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,143&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,144&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,145&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,146&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,147&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,148&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,149&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,150&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,151&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,152&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,153&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,154&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,155&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,156&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,157&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,158&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,159&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,160&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,161&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,162&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,163&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,164&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,165&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,166&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,167&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,168&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,169&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,170&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,171&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,172&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,173&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,174&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,175&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,176&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,177&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,178&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,179&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,180&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,181&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,182&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,183&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,184&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,185&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,186&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,187&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,188&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,189&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,190&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,191&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,192&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,193&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,194&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,195&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,196&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,197&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,198&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,199&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,200&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,201&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,202&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,203&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,204&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,205&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,206&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,207&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,208&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,209&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,210&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,211&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,212&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,213&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,214&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,215&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,216&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,217&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,218&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,219&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,220&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,221&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,222&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,223&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,224&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,225&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,226&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,227&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,228&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,229&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,230&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,231&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,232&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,233&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,234&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,235&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,236&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,237&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,238&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,239&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,240&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,241&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,242&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,243&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,244&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,245&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,246&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,247&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,248&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,249&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,250&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,251&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,252&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,253&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,254&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,255&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,256&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,257&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,258&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,259&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,260&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,261&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,262&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,263&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,264&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,265&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,266&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,267&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,268&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,269&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,270&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,271&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,272&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,273&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,274&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,275&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,276&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,277&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,278&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,279&#39;\n &#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f/rfmri.nii,280&#39;\n}\n}&#39;;&quot;
 ## 
 ## $spm$temporal$st$nslices
 ## [1] 60
@@ -514,19 +577,19 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 ## [1] &quot;matlabbatch&quot;
 ## 
 ## $script
-## [1] &quot;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba01e434b2c.m&quot;
+## [1] &quot;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b53943bf64.m&quot;
 ## 
 ## $orig_filename
-## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/rfmri.nii&quot;
+## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/rfmri.nii&quot;
 ## 
 ## $base_name
 ## [1] &quot;rfmri.nii&quot;
 ## 
 ## $temporary_directory
-## [1] &quot;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba026f11795&quot;
+## [1] &quot;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5b0dd59f&quot;
 ## 
 ## $outfile
-## [1] &quot;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/arfmri.nii&quot;
+## [1] &quot;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/arfmri.nii&quot;
 ## 
 ## $result
 ## [1] 0</code></pre>
@@ -537,34 +600,34 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="ac-pc-alignment" class="section level3">
 <h3>AC-PC Alignment</h3>
 <p>For the subsequent image normalization steps, SPM assumes the data is aligned along the anterior commissure (AC) posterior commissure (PC) line (AC-PC). The <code>acpc_reorient</code> function (based on <code>nii_setOrigin</code> from Dr. Chris Rorden) will do this. The syntax is that the first file (<code>mean_img</code>) is used to estimate the line/plane and the subsequent files are reoriented using this estimation (<code>aimg</code>). These are changes to the header of the image and the image with the new header is written to the same file as the input file.</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" title="1"><span class="co"># if (have_matlab()) {</span></a>
-<a class="sourceLine" id="cb28-2" title="2"><span class="co">#   acpc_reorient(</span></a>
-<a class="sourceLine" id="cb28-3" title="3"><span class="co">#     infiles = c(mean_img, aimg),</span></a>
-<a class="sourceLine" id="cb28-4" title="4"><span class="co">#     modality = &quot;T1&quot;)</span></a>
-<a class="sourceLine" id="cb28-5" title="5"><span class="co"># }</span></a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a><span class="co"># if (have_matlab()) {</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a><span class="co">#   acpc_reorient(</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a><span class="co">#     infiles = c(mean_img, aimg),</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a><span class="co">#     modality = &quot;T1&quot;)</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a><span class="co"># }</span></span></code></pre></div>
 <div id="anatomical-mri-coregistration-to-mean-fmri" class="section level4">
 <h4>Anatomical MRI Coregistration to Mean fMRI</h4>
 <p>Here we will perform the registration of the T1-weighted anatomical image into the space of the mean fMRI image after realignment. This is referred to as “co-registration” as it is within-subject registration, but across modalities (where we referred to within-subject, within-modality as realignment).</p>
 <p>Here, we also reorient the anatomical image the AC-PC line. We then perform the coregistration using <code>spm12_coregister</code>, where the fixed image is the mean image and the moving image is the anatomical.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb29-2" title="2">  <span class="co"># acpc_reorient(</span></a>
-<a class="sourceLine" id="cb29-3" title="3">  <span class="co"># infiles = t1_fname,</span></a>
-<a class="sourceLine" id="cb29-4" title="4">  <span class="co"># modality = &quot;T1&quot;)</span></a>
-<a class="sourceLine" id="cb29-5" title="5">  coreg =<span class="st"> </span><span class="kw">spm12_coregister_estimate</span>(</a>
-<a class="sourceLine" id="cb29-6" title="6">    <span class="dt">fixed =</span> realigned[[<span class="st">&quot;mean&quot;</span>]], </a>
-<a class="sourceLine" id="cb29-7" title="7">    <span class="dt">moving =</span> t1_fname, </a>
-<a class="sourceLine" id="cb29-8" title="8">    <span class="dt">cost_fun =</span> <span class="st">&quot;nmi&quot;</span>,</a>
-<a class="sourceLine" id="cb29-9" title="9">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb29-10" title="10">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb29-11" title="11">    )</a>
-<a class="sourceLine" id="cb29-12" title="12">}</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a>  <span class="co"># acpc_reorient(</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>  <span class="co"># infiles = t1_fname,</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true"></a>  <span class="co"># modality = &quot;T1&quot;)</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true"></a>  coreg =<span class="st"> </span><span class="kw">spm12_coregister_estimate</span>(</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true"></a>    <span class="dt">fixed =</span> realigned[[<span class="st">&quot;mean&quot;</span>]], </span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true"></a>    <span class="dt">moving =</span> t1_fname, </span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true"></a>    <span class="dt">cost_fun =</span> <span class="st">&quot;nmi&quot;</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true"></a>    )</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>## Checking Filenames</code></pre>
 <pre><code>## # Running matlabbatch job</code></pre>
 <pre><code>## # Creating matlabbatch job</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12\n</code></pre>
-<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba022fe57d3.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba059f9dc8b.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12\n</code></pre>
+<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b57e887f82.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b5666b0e8d.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba022fe57d3.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b57e887f82.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## # Removing scripts</code></pre>
 <p>We see the anatomical image has been transformed and resliced into the mean fMRI image space (and thus has the resolution of that image).</p>
@@ -574,27 +637,27 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="anatomical-mri-segmentation-and-spatial-normalize-estimation" class="section level2">
 <h2>Anatomical MRI Segmentation (and Spatial Normalize Estimation)</h2>
 <p>Here we perform the segmentation of the co-registered anatomical image from above. This will segment the image into 6 different regions, where the regions are gray matter, white matter, cerebrospinal fluid (CSF), bone, soft tissue, and the background. You should inspect these visually before using them to ensure quality and no reordering due to artifacts.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" title="1"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb39-2" title="2">  seg =<span class="st"> </span><span class="kw">spm12_segment</span>(</a>
-<a class="sourceLine" id="cb39-3" title="3">    <span class="dt">filename =</span> coreg<span class="op">$</span>outfile,</a>
-<a class="sourceLine" id="cb39-4" title="4">    <span class="dt">set_origin =</span> <span class="ot">FALSE</span>, </a>
-<a class="sourceLine" id="cb39-5" title="5">    <span class="dt">bias_corrected =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb39-6" title="6">    <span class="dt">native =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb39-7" title="7">    <span class="dt">dartel =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb39-8" title="8">    <span class="dt">unmodulated =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb39-9" title="9">    <span class="dt">modulated =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb39-10" title="10">    <span class="dt">affine =</span> <span class="st">&quot;mni&quot;</span>,</a>
-<a class="sourceLine" id="cb39-11" title="11">    <span class="dt">sampling_distance =</span> <span class="fl">1.5</span>,</a>
-<a class="sourceLine" id="cb39-12" title="12">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb39-13" title="13">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb39-14" title="14">    )</a>
-<a class="sourceLine" id="cb39-15" title="15">  <span class="kw">print</span>(<span class="kw">names</span>(seg))</a>
-<a class="sourceLine" id="cb39-16" title="16">}</a></code></pre></div>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12</code></pre>
-<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m
-## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Segment_job.m</code></pre>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true"></a>  seg =<span class="st"> </span><span class="kw">spm12_segment</span>(</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true"></a>    <span class="dt">filename =</span> coreg<span class="op">$</span>outfile,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true"></a>    <span class="dt">set_origin =</span> <span class="ot">FALSE</span>, </span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true"></a>    <span class="dt">bias_corrected =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true"></a>    <span class="dt">native =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true"></a>    <span class="dt">dartel =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true"></a>    <span class="dt">unmodulated =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true"></a>    <span class="dt">modulated =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true"></a>    <span class="dt">affine =</span> <span class="st">&quot;mni&quot;</span>,</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true"></a>    <span class="dt">sampling_distance =</span> <span class="fl">1.5</span>,</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true"></a>    )</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true"></a>  <span class="kw">print</span>(<span class="kw">names</span>(seg))</span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true"></a>}</span></code></pre></div>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12</code></pre>
+<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m
+## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Segment_job.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## # Removing scripts</code></pre>
 <pre><code>##  [1] &quot;spm&quot;                 &quot;script&quot;              &quot;result&quot;             
@@ -605,64 +668,64 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="applying-spatial-normalization-transformation" class="section level3">
 <h3>Applying Spatial Normalization Transformation</h3>
 <p>Now that we have estimated the transformation from the T1 image, we can take that deformation and apply it to the fMRI data using <code>spm12_normalize_write</code>. Again, we are registering to the MNI template and will use a standard bounding box. We pass the anatomical, mean fMRI, and 4D fMRI data in to be transformed.</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb47-1" title="1"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb47-2" title="2">  norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(</a>
-<a class="sourceLine" id="cb47-3" title="3">    <span class="dt">deformation =</span> seg<span class="op">$</span>deformation,</a>
-<a class="sourceLine" id="cb47-4" title="4">    <span class="dt">other.files =</span> aimg<span class="op">$</span>outfile,</a>
-<a class="sourceLine" id="cb47-5" title="5">    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(</a>
-<a class="sourceLine" id="cb47-6" title="6">      <span class="kw">c</span>(<span class="op">-</span><span class="dv">78</span>, <span class="dv">-112</span>, <span class="dv">-70</span>, </a>
-<a class="sourceLine" id="cb47-7" title="7">        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, </a>
-<a class="sourceLine" id="cb47-8" title="8">      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),</a>
-<a class="sourceLine" id="cb47-9" title="9">    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,</a>
-<a class="sourceLine" id="cb47-10" title="10">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb47-11" title="11">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb47-12" title="12">    )</a>
-<a class="sourceLine" id="cb47-13" title="13">  </a>
-<a class="sourceLine" id="cb47-14" title="14">  anat_norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(</a>
-<a class="sourceLine" id="cb47-15" title="15">    <span class="dt">deformation =</span> seg<span class="op">$</span>deformation,</a>
-<a class="sourceLine" id="cb47-16" title="16">    <span class="dt">other.files =</span> seg<span class="op">$</span>bias_corrected,</a>
-<a class="sourceLine" id="cb47-17" title="17">    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(</a>
-<a class="sourceLine" id="cb47-18" title="18">      <span class="kw">c</span>(<span class="op">-</span><span class="dv">78</span>, <span class="dv">-112</span>, <span class="dv">-70</span>, </a>
-<a class="sourceLine" id="cb47-19" title="19">        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, </a>
-<a class="sourceLine" id="cb47-20" title="20">      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),</a>
-<a class="sourceLine" id="cb47-21" title="21">    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,</a>
-<a class="sourceLine" id="cb47-22" title="22">    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>),</a>
-<a class="sourceLine" id="cb47-23" title="23">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb47-24" title="24">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb47-25" title="25">  )</a>
-<a class="sourceLine" id="cb47-26" title="26">  </a>
-<a class="sourceLine" id="cb47-27" title="27">  anat_norm2x2x2 =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(</a>
-<a class="sourceLine" id="cb47-28" title="28">    <span class="dt">deformation =</span> seg<span class="op">$</span>deformation,</a>
-<a class="sourceLine" id="cb47-29" title="29">    <span class="dt">other.files =</span> seg<span class="op">$</span>bias_corrected,</a>
-<a class="sourceLine" id="cb47-30" title="30">    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(</a>
-<a class="sourceLine" id="cb47-31" title="31">      <span class="kw">c</span>(<span class="op">-</span><span class="dv">78</span>, <span class="dv">-112</span>, <span class="dv">-70</span>, </a>
-<a class="sourceLine" id="cb47-32" title="32">        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, </a>
-<a class="sourceLine" id="cb47-33" title="33">      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),</a>
-<a class="sourceLine" id="cb47-34" title="34">    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,</a>
-<a class="sourceLine" id="cb47-35" title="35">    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>),</a>
-<a class="sourceLine" id="cb47-36" title="36">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb47-37" title="37">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb47-38" title="38">  )  </a>
-<a class="sourceLine" id="cb47-39" title="39">}</a></code></pre></div>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12</code></pre>
-<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m
-## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Normalize_Write_job.m</code></pre>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true"></a>  norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true"></a>    <span class="dt">deformation =</span> seg<span class="op">$</span>deformation,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true"></a>    <span class="dt">other.files =</span> aimg<span class="op">$</span>outfile,</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true"></a>    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true"></a>      <span class="kw">c</span>(<span class="op">-</span><span class="dv">78</span>, <span class="dv">-112</span>, <span class="dv">-70</span>, </span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true"></a>        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, </span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true"></a>      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true"></a>    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true"></a>    )</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true"></a>  </span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true"></a>  anat_norm =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(</span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true"></a>    <span class="dt">deformation =</span> seg<span class="op">$</span>deformation,</span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true"></a>    <span class="dt">other.files =</span> seg<span class="op">$</span>bias_corrected,</span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true"></a>    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true"></a>      <span class="kw">c</span>(<span class="op">-</span><span class="dv">78</span>, <span class="dv">-112</span>, <span class="dv">-70</span>, </span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true"></a>        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, </span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true"></a>      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true"></a>    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,</span>
+<span id="cb47-22"><a href="#cb47-22" aria-hidden="true"></a>    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb47-23"><a href="#cb47-23" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb47-24"><a href="#cb47-24" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb47-25"><a href="#cb47-25" aria-hidden="true"></a>  )</span>
+<span id="cb47-26"><a href="#cb47-26" aria-hidden="true"></a>  </span>
+<span id="cb47-27"><a href="#cb47-27" aria-hidden="true"></a>  anat_norm2x2x2 =<span class="st"> </span><span class="kw">spm12_normalize_write</span>(</span>
+<span id="cb47-28"><a href="#cb47-28" aria-hidden="true"></a>    <span class="dt">deformation =</span> seg<span class="op">$</span>deformation,</span>
+<span id="cb47-29"><a href="#cb47-29" aria-hidden="true"></a>    <span class="dt">other.files =</span> seg<span class="op">$</span>bias_corrected,</span>
+<span id="cb47-30"><a href="#cb47-30" aria-hidden="true"></a>    <span class="dt">bounding_box =</span> <span class="kw">matrix</span>(</span>
+<span id="cb47-31"><a href="#cb47-31" aria-hidden="true"></a>      <span class="kw">c</span>(<span class="op">-</span><span class="dv">78</span>, <span class="dv">-112</span>, <span class="dv">-70</span>, </span>
+<span id="cb47-32"><a href="#cb47-32" aria-hidden="true"></a>        <span class="dv">78</span>, <span class="dv">76</span>, <span class="dv">85</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, </span>
+<span id="cb47-33"><a href="#cb47-33" aria-hidden="true"></a>      <span class="dt">byrow =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb47-34"><a href="#cb47-34" aria-hidden="true"></a>    <span class="dt">interp =</span> <span class="st">&quot;bspline5&quot;</span>,</span>
+<span id="cb47-35"><a href="#cb47-35" aria-hidden="true"></a>    <span class="dt">voxel_size =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>),</span>
+<span id="cb47-36"><a href="#cb47-36" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb47-37"><a href="#cb47-37" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb47-38"><a href="#cb47-38" aria-hidden="true"></a>  )  </span>
+<span id="cb47-39"><a href="#cb47-39" aria-hidden="true"></a>}</span></code></pre></div>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12</code></pre>
+<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m
+## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Normalize_Write_job.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## # Removing scripts</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12</code></pre>
-<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m
-## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Normalize_Write_job.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12</code></pre>
+<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m
+## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Normalize_Write_job.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## # Removing scripts</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12</code></pre>
-<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m
-## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Normalize_Write_job.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12</code></pre>
+<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m
+## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Normalize_Write_job.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## # Removing scripts</code></pre>
 <p>Now we have the indirect spatially normalized data in MNI template space.</p>
@@ -674,20 +737,20 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p><span class="math display">\[
 FWHM = \sigma \sqrt{8 \log(2)}
 \]</span> where <span class="math inline">\(\log\)</span>` is the natural log.</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" title="1"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb66-2" title="2">  smooth_norm =<span class="st"> </span><span class="kw">spm12_smooth</span>(</a>
-<a class="sourceLine" id="cb66-3" title="3">    norm<span class="op">$</span>outfiles[[<span class="dv">1</span>]], </a>
-<a class="sourceLine" id="cb66-4" title="4">    <span class="dt">fwhm =</span> <span class="dv">5</span>, </a>
-<a class="sourceLine" id="cb66-5" title="5">    <span class="dt">prefix =</span> <span class="st">&quot;s5&quot;</span>,</a>
-<a class="sourceLine" id="cb66-6" title="6">    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb66-7" title="7">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb66-8" title="8">    )</a>
-<a class="sourceLine" id="cb66-9" title="9">}</a></code></pre></div>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12</code></pre>
-<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m
-## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Smooth_job.m</code></pre>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true"></a>  smooth_norm =<span class="st"> </span><span class="kw">spm12_smooth</span>(</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true"></a>    norm<span class="op">$</span>outfiles[[<span class="dv">1</span>]], </span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true"></a>    <span class="dt">fwhm =</span> <span class="dv">5</span>, </span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true"></a>    <span class="dt">prefix =</span> <span class="st">&quot;s5&quot;</span>,</span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true"></a>    <span class="dt">retimg =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb66-8"><a href="#cb66-8" aria-hidden="true"></a>    )</span>
+<span id="cb66-9"><a href="#cb66-9" aria-hidden="true"></a>}</span></code></pre></div>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12</code></pre>
+<pre><code>## # Running script /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m
+## which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Smooth_job.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -singleCompThread -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/Executable.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
 <pre><code>## # Removing scripts</code></pre>
 <p>In many applications, this is the data you will use for post-processing and analysis. Motion correction has usually been applied above, but some motion correct this data as well.</p>
@@ -697,176 +760,178 @@ FWHM = \sigma \sqrt{8 \log(2)}
 <h1>First Level Model</h1>
 <div id="estimate-model" class="section level2">
 <h2>Estimate Model</h2>
-<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" title="1">output_directory =<span class="st"> </span><span class="kw">file.path</span>(run_dir, <span class="st">&quot;output&quot;</span>)</a>
-<a class="sourceLine" id="cb73-2" title="2"><span class="cf">if</span> (<span class="op">!</span><span class="kw">dir.exists</span>(output_directory)) {</a>
-<a class="sourceLine" id="cb73-3" title="3">  <span class="kw">dir.create</span>(output_directory)</a>
-<a class="sourceLine" id="cb73-4" title="4">}</a>
-<a class="sourceLine" id="cb73-5" title="5">output_directory =<span class="st"> </span><span class="kw">normalizePath</span>(output_directory)</a>
-<a class="sourceLine" id="cb73-6" title="6"></a>
-<a class="sourceLine" id="cb73-7" title="7"><span class="co">################################</span></a>
-<a class="sourceLine" id="cb73-8" title="8"><span class="co"># Same model just using condition list</span></a>
-<a class="sourceLine" id="cb73-9" title="9"><span class="co">################################</span></a>
-<a class="sourceLine" id="cb73-10" title="10">condition_list =<span class="st"> </span><span class="kw">list</span>(</a>
-<a class="sourceLine" id="cb73-11" title="11">  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,</a>
-<a class="sourceLine" id="cb73-12" title="12">       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">100</span>, <span class="dv">180</span>, <span class="dv">260</span>, <span class="dv">340</span>, <span class="dv">420</span>),</a>
-<a class="sourceLine" id="cb73-13" title="13">       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb73-14" title="14">  ),</a>
-<a class="sourceLine" id="cb73-15" title="15">  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,</a>
-<a class="sourceLine" id="cb73-16" title="16">       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">60</span>, <span class="dv">140</span>, <span class="dv">220</span>, <span class="dv">300</span>, <span class="dv">380</span>, <span class="dv">460</span>),</a>
-<a class="sourceLine" id="cb73-17" title="17">       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb73-18" title="18">  )</a>
-<a class="sourceLine" id="cb73-19" title="19">)</a>
-<a class="sourceLine" id="cb73-20" title="20"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb73-21" title="21">  first_model =<span class="st"> </span><span class="kw">spm12_first_level</span>(</a>
-<a class="sourceLine" id="cb73-22" title="22">    <span class="dt">scans =</span> smooth_norm<span class="op">$</span>outfiles,</a>
-<a class="sourceLine" id="cb73-23" title="23">    <span class="dt">n_time_points =</span> n_time_points,</a>
-<a class="sourceLine" id="cb73-24" title="24">    <span class="dt">units =</span> <span class="st">&quot;secs&quot;</span>,</a>
-<a class="sourceLine" id="cb73-25" title="25">    <span class="dt">slice_timed =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb73-26" title="26">    <span class="dt">tr =</span> tr,</a>
-<a class="sourceLine" id="cb73-27" title="27">    <span class="dt">condition_list =</span> condition_list,</a>
-<a class="sourceLine" id="cb73-28" title="28">    <span class="dt">regressor_mat =</span> rpfile,</a>
-<a class="sourceLine" id="cb73-29" title="29">    <span class="dt">outdir =</span> output_directory,</a>
-<a class="sourceLine" id="cb73-30" title="30">    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb73-31" title="31">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb73-32" title="32">  )</a>
-<a class="sourceLine" id="cb73-33" title="33">  </a>
-<a class="sourceLine" id="cb73-34" title="34">  cons =<span class="st"> </span><span class="kw">list.files</span>(</a>
-<a class="sourceLine" id="cb73-35" title="35">    <span class="dt">pattern =</span> <span class="st">&quot;beta.*[.]nii&quot;</span>, </a>
-<a class="sourceLine" id="cb73-36" title="36">    <span class="dt">path =</span> output_directory,</a>
-<a class="sourceLine" id="cb73-37" title="37">    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb73-38" title="38">  <span class="kw">print</span>(cons)</a>
-<a class="sourceLine" id="cb73-39" title="39">}</a></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true"></a>output_directory =<span class="st"> </span><span class="kw">file.path</span>(run_dir, <span class="st">&quot;output&quot;</span>)</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true"></a><span class="cf">if</span> (<span class="op">!</span><span class="kw">dir.exists</span>(output_directory)) {</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true"></a>  <span class="kw">dir.create</span>(output_directory)</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true"></a>}</span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true"></a>output_directory =<span class="st"> </span><span class="kw">normalizePath</span>(output_directory)</span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true"></a></span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true"></a><span class="co">################################</span></span>
+<span id="cb73-8"><a href="#cb73-8" aria-hidden="true"></a><span class="co"># Same model just using condition list</span></span>
+<span id="cb73-9"><a href="#cb73-9" aria-hidden="true"></a><span class="co">################################</span></span>
+<span id="cb73-10"><a href="#cb73-10" aria-hidden="true"></a>condition_list =<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb73-11"><a href="#cb73-11" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,</span>
+<span id="cb73-12"><a href="#cb73-12" aria-hidden="true"></a>       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">100</span>, <span class="dv">180</span>, <span class="dv">260</span>, <span class="dv">340</span>, <span class="dv">420</span>),</span>
+<span id="cb73-13"><a href="#cb73-13" aria-hidden="true"></a>       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)</span>
+<span id="cb73-14"><a href="#cb73-14" aria-hidden="true"></a>  ),</span>
+<span id="cb73-15"><a href="#cb73-15" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,</span>
+<span id="cb73-16"><a href="#cb73-16" aria-hidden="true"></a>       <span class="dt">onset =</span> <span class="kw">c</span>(<span class="dv">60</span>, <span class="dv">140</span>, <span class="dv">220</span>, <span class="dv">300</span>, <span class="dv">380</span>, <span class="dv">460</span>),</span>
+<span id="cb73-17"><a href="#cb73-17" aria-hidden="true"></a>       <span class="dt">duration =</span> <span class="kw">c</span>(<span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)</span>
+<span id="cb73-18"><a href="#cb73-18" aria-hidden="true"></a>  )</span>
+<span id="cb73-19"><a href="#cb73-19" aria-hidden="true"></a>)</span>
+<span id="cb73-20"><a href="#cb73-20" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb73-21"><a href="#cb73-21" aria-hidden="true"></a>  first_model =<span class="st"> </span><span class="kw">spm12_first_level</span>(</span>
+<span id="cb73-22"><a href="#cb73-22" aria-hidden="true"></a>    <span class="dt">scans =</span> smooth_norm<span class="op">$</span>outfiles,</span>
+<span id="cb73-23"><a href="#cb73-23" aria-hidden="true"></a>    <span class="dt">n_time_points =</span> n_time_points,</span>
+<span id="cb73-24"><a href="#cb73-24" aria-hidden="true"></a>    <span class="dt">units =</span> <span class="st">&quot;secs&quot;</span>,</span>
+<span id="cb73-25"><a href="#cb73-25" aria-hidden="true"></a>    <span class="dt">slice_timed =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb73-26"><a href="#cb73-26" aria-hidden="true"></a>    <span class="dt">tr =</span> tr,</span>
+<span id="cb73-27"><a href="#cb73-27" aria-hidden="true"></a>    <span class="dt">condition_list =</span> condition_list,</span>
+<span id="cb73-28"><a href="#cb73-28" aria-hidden="true"></a>    <span class="dt">regressor_mat =</span> rpfile,</span>
+<span id="cb73-29"><a href="#cb73-29" aria-hidden="true"></a>    <span class="dt">outdir =</span> output_directory,</span>
+<span id="cb73-30"><a href="#cb73-30" aria-hidden="true"></a>    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb73-31"><a href="#cb73-31" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb73-32"><a href="#cb73-32" aria-hidden="true"></a>  )</span>
+<span id="cb73-33"><a href="#cb73-33" aria-hidden="true"></a>  </span>
+<span id="cb73-34"><a href="#cb73-34" aria-hidden="true"></a>  cons =<span class="st"> </span><span class="kw">list.files</span>(</span>
+<span id="cb73-35"><a href="#cb73-35" aria-hidden="true"></a>    <span class="dt">pattern =</span> <span class="st">&quot;beta.*[.]nii&quot;</span>, </span>
+<span id="cb73-36"><a href="#cb73-36" aria-hidden="true"></a>    <span class="dt">path =</span> output_directory,</span>
+<span id="cb73-37"><a href="#cb73-37" aria-hidden="true"></a>    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb73-38"><a href="#cb73-38" aria-hidden="true"></a>  <span class="kw">print</span>(cons)</span>
+<span id="cb73-39"><a href="#cb73-39" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>## Warning in normalizePath(spm): path[1]=&quot;/private/var/folders/1s/
-## wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/
-## SPM.mat&quot;: No such file or directory</code></pre>
+## wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/SPM.mat&quot;: No
+## such file or directory</code></pre>
 <pre><code>## # Running matlabbatch job</code></pre>
 <pre><code>## # Creating matlabbatch job</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12\n</code></pre>
-<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba053e4bebb.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba067ffeffc.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12\n</code></pre>
+<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b550cca748.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b55afbea32.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba053e4bebb.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b550cca748.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
-<pre><code>## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0001.nii&quot;
-## [2] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0002.nii&quot;
-## [3] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0003.nii&quot;
-## [4] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0004.nii&quot;
-## [5] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0005.nii&quot;
-## [6] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0006.nii&quot;
-## [7] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0007.nii&quot;
-## [8] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0008.nii&quot;
-## [9] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/beta_0009.nii&quot;</code></pre>
+<pre><code>## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0001.nii&quot;
+## [2] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0002.nii&quot;
+## [3] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0003.nii&quot;
+## [4] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0004.nii&quot;
+## [5] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0005.nii&quot;
+## [6] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0006.nii&quot;
+## [7] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0007.nii&quot;
+## [8] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0008.nii&quot;
+## [9] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/beta_0009.nii&quot;</code></pre>
 </div>
 <div id="contrast-manager---creating-contrasts" class="section level2">
 <h2>Contrast Manager - Creating Contrasts</h2>
-<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb83-1" title="1">contrasts =<span class="st"> </span><span class="kw">list</span>(</a>
-<a class="sourceLine" id="cb83-2" title="2">  <span class="kw">list</span>(</a>
-<a class="sourceLine" id="cb83-3" title="3">    <span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,</a>
-<a class="sourceLine" id="cb83-4" title="4">    <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),</a>
-<a class="sourceLine" id="cb83-5" title="5">    <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,</a>
-<a class="sourceLine" id="cb83-6" title="6">    <span class="dt">type =</span> <span class="st">&quot;T&quot;</span> ),</a>
-<a class="sourceLine" id="cb83-7" title="7">  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,</a>
-<a class="sourceLine" id="cb83-8" title="8">       <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>)),</a>
-<a class="sourceLine" id="cb83-9" title="9">       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,</a>
-<a class="sourceLine" id="cb83-10" title="10">       <span class="dt">type =</span> <span class="st">&quot;T&quot;</span>), </a>
-<a class="sourceLine" id="cb83-11" title="11">  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;AllEffects&quot;</span>,</a>
-<a class="sourceLine" id="cb83-12" title="12">       <span class="dt">weights =</span> <span class="kw">rbind</span>(</a>
-<a class="sourceLine" id="cb83-13" title="13">         <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),</a>
-<a class="sourceLine" id="cb83-14" title="14">         <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>))</a>
-<a class="sourceLine" id="cb83-15" title="15">       ),</a>
-<a class="sourceLine" id="cb83-16" title="16">       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,</a>
-<a class="sourceLine" id="cb83-17" title="17">       <span class="dt">type =</span> <span class="st">&quot;F&quot;</span>)   </a>
-<a class="sourceLine" id="cb83-18" title="18">)</a>
-<a class="sourceLine" id="cb83-19" title="19"></a>
-<a class="sourceLine" id="cb83-20" title="20"></a>
-<a class="sourceLine" id="cb83-21" title="21"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb83-22" title="22">  contrast_res =<span class="st"> </span><span class="kw">spm12_contrast_manager</span>(</a>
-<a class="sourceLine" id="cb83-23" title="23">    <span class="dt">spm =</span> first_model<span class="op">$</span>spmmat,</a>
-<a class="sourceLine" id="cb83-24" title="24">    <span class="dt">delete_existing =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb83-25" title="25">    <span class="dt">contrast_list =</span> contrasts,</a>
-<a class="sourceLine" id="cb83-26" title="26">    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb83-27" title="27">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb83-28" title="28">  )</a>
-<a class="sourceLine" id="cb83-29" title="29">}</a></code></pre></div>
+<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true"></a>contrasts =<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true"></a>  <span class="kw">list</span>(</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true"></a>    <span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true"></a>    <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),</span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true"></a>    <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,</span>
+<span id="cb83-6"><a href="#cb83-6" aria-hidden="true"></a>    <span class="dt">type =</span> <span class="st">&quot;T&quot;</span> ),</span>
+<span id="cb83-7"><a href="#cb83-7" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,</span>
+<span id="cb83-8"><a href="#cb83-8" aria-hidden="true"></a>       <span class="dt">weights =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>)),</span>
+<span id="cb83-9"><a href="#cb83-9" aria-hidden="true"></a>       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,</span>
+<span id="cb83-10"><a href="#cb83-10" aria-hidden="true"></a>       <span class="dt">type =</span> <span class="st">&quot;T&quot;</span>), </span>
+<span id="cb83-11"><a href="#cb83-11" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;AllEffects&quot;</span>,</span>
+<span id="cb83-12"><a href="#cb83-12" aria-hidden="true"></a>       <span class="dt">weights =</span> <span class="kw">rbind</span>(</span>
+<span id="cb83-13"><a href="#cb83-13" aria-hidden="true"></a>         <span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">7</span>)),</span>
+<span id="cb83-14"><a href="#cb83-14" aria-hidden="true"></a>         <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">6</span>))</span>
+<span id="cb83-15"><a href="#cb83-15" aria-hidden="true"></a>       ),</span>
+<span id="cb83-16"><a href="#cb83-16" aria-hidden="true"></a>       <span class="dt">replicate =</span> <span class="st">&quot;none&quot;</span>,</span>
+<span id="cb83-17"><a href="#cb83-17" aria-hidden="true"></a>       <span class="dt">type =</span> <span class="st">&quot;F&quot;</span>)   </span>
+<span id="cb83-18"><a href="#cb83-18" aria-hidden="true"></a>)</span>
+<span id="cb83-19"><a href="#cb83-19" aria-hidden="true"></a></span>
+<span id="cb83-20"><a href="#cb83-20" aria-hidden="true"></a></span>
+<span id="cb83-21"><a href="#cb83-21" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb83-22"><a href="#cb83-22" aria-hidden="true"></a>  contrast_res =<span class="st"> </span><span class="kw">spm12_contrast_manager</span>(</span>
+<span id="cb83-23"><a href="#cb83-23" aria-hidden="true"></a>    <span class="dt">spm =</span> first_model<span class="op">$</span>spmmat,</span>
+<span id="cb83-24"><a href="#cb83-24" aria-hidden="true"></a>    <span class="dt">delete_existing =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb83-25"><a href="#cb83-25" aria-hidden="true"></a>    <span class="dt">contrast_list =</span> contrasts,</span>
+<span id="cb83-26"><a href="#cb83-26" aria-hidden="true"></a>    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb83-27"><a href="#cb83-27" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb83-28"><a href="#cb83-28" aria-hidden="true"></a>  )</span>
+<span id="cb83-29"><a href="#cb83-29" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>## # Running matlabbatch job</code></pre>
 <pre><code>## # Creating matlabbatch job</code></pre>
-<pre><code>## # Adding SPMDIR: /private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp5e14P8/Rinstbb8a3804b216/spm12r/spm12\n</code></pre>
-<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba05b295e89.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba041c41e2.m</code></pre>
+<pre><code>## # Adding SPMDIR: /private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmpdvej41/Rinst314225043e9b/spm12r/spm12\n</code></pre>
+<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b51461d6af.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b54f639b31.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba05b295e89.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash   -nodisplay -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b51461d6af.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
 <pre><code>## # Result is 0</code></pre>
-<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" title="1"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb91-2" title="2">  <span class="kw">dir</span>(output_directory)</a>
-<a class="sourceLine" id="cb91-3" title="3">  </a>
-<a class="sourceLine" id="cb91-4" title="4">  cons =<span class="st"> </span><span class="kw">list.files</span>(</a>
-<a class="sourceLine" id="cb91-5" title="5">    <span class="dt">pattern =</span> <span class="st">&quot;con.*[.]nii&quot;</span>, <span class="dt">path =</span> output_directory,</a>
-<a class="sourceLine" id="cb91-6" title="6">    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb91-7" title="7">  <span class="kw">print</span>(cons)</a>
-<a class="sourceLine" id="cb91-8" title="8">  stats =<span class="st"> </span><span class="kw">list.files</span>(</a>
-<a class="sourceLine" id="cb91-9" title="9">    <span class="dt">pattern =</span> <span class="st">&quot;spm(T|F).*[.]nii&quot;</span>, </a>
-<a class="sourceLine" id="cb91-10" title="10">    <span class="dt">path =</span> output_directory,</a>
-<a class="sourceLine" id="cb91-11" title="11">    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb91-12" title="12">  <span class="kw">print</span>(stats)</a>
-<a class="sourceLine" id="cb91-13" title="13">  <span class="co"># anat_img = readnii(anat_norm2x2x2$outfiles)</span></a>
-<a class="sourceLine" id="cb91-14" title="14">  <span class="co"># stat_t = readnii(stats[2])</span></a>
-<a class="sourceLine" id="cb91-15" title="15">}</a></code></pre></div>
-<pre><code>## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/con_0001.nii&quot;
-## [2] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/con_0002.nii&quot;
-## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/spmF_0003.nii&quot;
-## [2] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/spmT_0001.nii&quot;
-## [3] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/RtmpuSoCbO/filebba03af41139/output/spmT_0002.nii&quot;</code></pre>
-<div class="sourceCode" id="cb93"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb93-1" title="1">contrast_query_list =<span class="st"> </span><span class="kw">list</span>(</a>
-<a class="sourceLine" id="cb93-2" title="2">  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,</a>
-<a class="sourceLine" id="cb93-3" title="3">       <span class="dt">weights =</span> <span class="dv">1</span>,</a>
-<a class="sourceLine" id="cb93-4" title="4">       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,</a>
-<a class="sourceLine" id="cb93-5" title="5">       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb93-6" title="6">       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>),</a>
-<a class="sourceLine" id="cb93-7" title="7">  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,</a>
-<a class="sourceLine" id="cb93-8" title="8">       <span class="dt">weights =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb93-9" title="9">       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,</a>
-<a class="sourceLine" id="cb93-10" title="10">       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb93-11" title="11">       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)  </a>
-<a class="sourceLine" id="cb93-12" title="12">)</a>
-<a class="sourceLine" id="cb93-13" title="13"></a>
-<a class="sourceLine" id="cb93-14" title="14">contrast_query_list =<span class="st"> </span></a>
-<a class="sourceLine" id="cb93-15" title="15"><span class="st">  </span><span class="kw">list</span>(</a>
-<a class="sourceLine" id="cb93-16" title="16">    <span class="kw">list</span>(</a>
-<a class="sourceLine" id="cb93-17" title="17">    <span class="dt">name =</span> <span class="st">&quot;All Contrasts&quot;</span>,</a>
-<a class="sourceLine" id="cb93-18" title="18">    <span class="dt">weights =</span> <span class="ot">Inf</span>,</a>
-<a class="sourceLine" id="cb93-19" title="19">    <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,</a>
-<a class="sourceLine" id="cb93-20" title="20">    <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb93-21" title="21">    <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)</a>
-<a class="sourceLine" id="cb93-22" title="22">  )</a>
-<a class="sourceLine" id="cb93-23" title="23"><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</a>
-<a class="sourceLine" id="cb93-24" title="24">  display =<span class="st"> </span><span class="kw">all</span>(<span class="kw">Sys.getenv</span>(<span class="st">&quot;DISPLAY&quot;</span>) <span class="op">!=</span><span class="st"> &quot;&quot;</span>)</a>
-<a class="sourceLine" id="cb93-25" title="25">  desktop =<span class="st"> </span>display</a>
-<a class="sourceLine" id="cb93-26" title="26">  result_format =<span class="st"> &quot;csv&quot;</span></a>
-<a class="sourceLine" id="cb93-27" title="27">  results =<span class="st"> </span><span class="kw">spm12_results</span>(</a>
-<a class="sourceLine" id="cb93-28" title="28">    <span class="dt">spm =</span> first_model<span class="op">$</span>spmmat,</a>
-<a class="sourceLine" id="cb93-29" title="29">    <span class="dt">units =</span> <span class="st">&quot;Volumetric&quot;</span>,</a>
-<a class="sourceLine" id="cb93-30" title="30">    <span class="dt">result_format =</span> result_format,</a>
-<a class="sourceLine" id="cb93-31" title="31">    <span class="dt">contrast_list =</span> contrast_query_list,</a>
-<a class="sourceLine" id="cb93-32" title="32">    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb93-33" title="33">    <span class="dt">display =</span> display,</a>
-<a class="sourceLine" id="cb93-34" title="34">    <span class="dt">desktop =</span> <span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb93-35" title="35">    <span class="dt">write_images =</span> <span class="st">&quot;binary_clusters&quot;</span>,</a>
-<a class="sourceLine" id="cb93-36" title="36">    <span class="dt">image_basename =</span> <span class="st">&quot;thresholded&quot;</span>,</a>
-<a class="sourceLine" id="cb93-37" title="37">    <span class="dt">install_dir =</span> install_dir</a>
-<a class="sourceLine" id="cb93-38" title="38">    )</a>
-<a class="sourceLine" id="cb93-39" title="39">  out_results =<span class="st"> </span><span class="kw">list.files</span>(</a>
-<a class="sourceLine" id="cb93-40" title="40">    <span class="dt">pattern =</span> <span class="kw">paste0</span>(<span class="st">&quot;spm.*[.]&quot;</span>, result_format),</a>
-<a class="sourceLine" id="cb93-41" title="41">    <span class="dt">path =</span> output_directory,</a>
-<a class="sourceLine" id="cb93-42" title="42">    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)  </a>
-<a class="sourceLine" id="cb93-43" title="43">  <span class="co"># out_dir = spm_directory(spm = first_model$spmmat)</span></a>
-<a class="sourceLine" id="cb93-44" title="44">}</a></code></pre></div>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true"></a>  <span class="kw">dir</span>(output_directory)</span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true"></a>  </span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true"></a>  cons =<span class="st"> </span><span class="kw">list.files</span>(</span>
+<span id="cb91-5"><a href="#cb91-5" aria-hidden="true"></a>    <span class="dt">pattern =</span> <span class="st">&quot;con.*[.]nii&quot;</span>, <span class="dt">path =</span> output_directory,</span>
+<span id="cb91-6"><a href="#cb91-6" aria-hidden="true"></a>    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb91-7"><a href="#cb91-7" aria-hidden="true"></a>  <span class="kw">print</span>(cons)</span>
+<span id="cb91-8"><a href="#cb91-8" aria-hidden="true"></a>  stats =<span class="st"> </span><span class="kw">list.files</span>(</span>
+<span id="cb91-9"><a href="#cb91-9" aria-hidden="true"></a>    <span class="dt">pattern =</span> <span class="st">&quot;spm(T|F).*[.]nii&quot;</span>, </span>
+<span id="cb91-10"><a href="#cb91-10" aria-hidden="true"></a>    <span class="dt">path =</span> output_directory,</span>
+<span id="cb91-11"><a href="#cb91-11" aria-hidden="true"></a>    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb91-12"><a href="#cb91-12" aria-hidden="true"></a>  <span class="kw">print</span>(stats)</span>
+<span id="cb91-13"><a href="#cb91-13" aria-hidden="true"></a>  <span class="co"># anat_img = readnii(anat_norm2x2x2$outfiles)</span></span>
+<span id="cb91-14"><a href="#cb91-14" aria-hidden="true"></a>  <span class="co"># stat_t = readnii(stats[2])</span></span>
+<span id="cb91-15"><a href="#cb91-15" aria-hidden="true"></a>}</span></code></pre></div>
+<pre><code>## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/con_0001.nii&quot;
+## [2] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/con_0002.nii&quot;
+## [1] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/spmF_0003.nii&quot;
+## [2] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/spmT_0001.nii&quot;
+## [3] &quot;/private/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T/Rtmp58dXvT/file31b570a46bfc/output/spmT_0002.nii&quot;</code></pre>
+<div class="sourceCode" id="cb93"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true"></a>contrast_query_list =<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb93-2"><a href="#cb93-2" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;LeftHand&quot;</span>,</span>
+<span id="cb93-3"><a href="#cb93-3" aria-hidden="true"></a>       <span class="dt">weights =</span> <span class="dv">1</span>,</span>
+<span id="cb93-4"><a href="#cb93-4" aria-hidden="true"></a>       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,</span>
+<span id="cb93-5"><a href="#cb93-5" aria-hidden="true"></a>       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,</span>
+<span id="cb93-6"><a href="#cb93-6" aria-hidden="true"></a>       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>),</span>
+<span id="cb93-7"><a href="#cb93-7" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">name =</span> <span class="st">&quot;RightHand&quot;</span>,</span>
+<span id="cb93-8"><a href="#cb93-8" aria-hidden="true"></a>       <span class="dt">weights =</span> <span class="dv">2</span>,</span>
+<span id="cb93-9"><a href="#cb93-9" aria-hidden="true"></a>       <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,</span>
+<span id="cb93-10"><a href="#cb93-10" aria-hidden="true"></a>       <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,</span>
+<span id="cb93-11"><a href="#cb93-11" aria-hidden="true"></a>       <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)  </span>
+<span id="cb93-12"><a href="#cb93-12" aria-hidden="true"></a>)</span>
+<span id="cb93-13"><a href="#cb93-13" aria-hidden="true"></a></span>
+<span id="cb93-14"><a href="#cb93-14" aria-hidden="true"></a>contrast_query_list =<span class="st"> </span></span>
+<span id="cb93-15"><a href="#cb93-15" aria-hidden="true"></a><span class="st">  </span><span class="kw">list</span>(</span>
+<span id="cb93-16"><a href="#cb93-16" aria-hidden="true"></a>    <span class="kw">list</span>(</span>
+<span id="cb93-17"><a href="#cb93-17" aria-hidden="true"></a>    <span class="dt">name =</span> <span class="st">&quot;All Contrasts&quot;</span>,</span>
+<span id="cb93-18"><a href="#cb93-18" aria-hidden="true"></a>    <span class="dt">weights =</span> <span class="ot">Inf</span>,</span>
+<span id="cb93-19"><a href="#cb93-19" aria-hidden="true"></a>    <span class="dt">threshold_type =</span> <span class="st">&quot;FWE&quot;</span>,</span>
+<span id="cb93-20"><a href="#cb93-20" aria-hidden="true"></a>    <span class="dt">number_extent_voxels =</span> <span class="dv">0</span>,</span>
+<span id="cb93-21"><a href="#cb93-21" aria-hidden="true"></a>    <span class="dt">mask_type =</span> <span class="st">&quot;None&quot;</span>)</span>
+<span id="cb93-22"><a href="#cb93-22" aria-hidden="true"></a>  )</span>
+<span id="cb93-23"><a href="#cb93-23" aria-hidden="true"></a><span class="cf">if</span> (<span class="kw">have_matlab</span>()) {</span>
+<span id="cb93-24"><a href="#cb93-24" aria-hidden="true"></a>  display =<span class="st"> </span><span class="kw">all</span>(<span class="kw">Sys.getenv</span>(<span class="st">&quot;DISPLAY&quot;</span>) <span class="op">!=</span><span class="st"> &quot;&quot;</span>)</span>
+<span id="cb93-25"><a href="#cb93-25" aria-hidden="true"></a>  desktop =<span class="st"> </span>display</span>
+<span id="cb93-26"><a href="#cb93-26" aria-hidden="true"></a>  result_format =<span class="st"> &quot;csv&quot;</span></span>
+<span id="cb93-27"><a href="#cb93-27" aria-hidden="true"></a>  results =<span class="st"> </span><span class="kw">spm12_results</span>(</span>
+<span id="cb93-28"><a href="#cb93-28" aria-hidden="true"></a>    <span class="dt">spm =</span> first_model<span class="op">$</span>spmmat,</span>
+<span id="cb93-29"><a href="#cb93-29" aria-hidden="true"></a>    <span class="dt">units =</span> <span class="st">&quot;Volumetric&quot;</span>,</span>
+<span id="cb93-30"><a href="#cb93-30" aria-hidden="true"></a>    <span class="dt">result_format =</span> result_format,</span>
+<span id="cb93-31"><a href="#cb93-31" aria-hidden="true"></a>    <span class="dt">contrast_list =</span> contrast_query_list,</span>
+<span id="cb93-32"><a href="#cb93-32" aria-hidden="true"></a>    <span class="dt">clean =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb93-33"><a href="#cb93-33" aria-hidden="true"></a>    <span class="dt">display =</span> display,</span>
+<span id="cb93-34"><a href="#cb93-34" aria-hidden="true"></a>    <span class="dt">desktop =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb93-35"><a href="#cb93-35" aria-hidden="true"></a>    <span class="dt">write_images =</span> <span class="st">&quot;binary_clusters&quot;</span>,</span>
+<span id="cb93-36"><a href="#cb93-36" aria-hidden="true"></a>    <span class="dt">image_basename =</span> <span class="st">&quot;thresholded&quot;</span>,</span>
+<span id="cb93-37"><a href="#cb93-37" aria-hidden="true"></a>    <span class="dt">install_dir =</span> install_dir</span>
+<span id="cb93-38"><a href="#cb93-38" aria-hidden="true"></a>    )</span>
+<span id="cb93-39"><a href="#cb93-39" aria-hidden="true"></a>  out_results =<span class="st"> </span><span class="kw">list.files</span>(</span>
+<span id="cb93-40"><a href="#cb93-40" aria-hidden="true"></a>    <span class="dt">pattern =</span> <span class="kw">paste0</span>(<span class="st">&quot;spm.*[.]&quot;</span>, result_format),</span>
+<span id="cb93-41"><a href="#cb93-41" aria-hidden="true"></a>    <span class="dt">path =</span> output_directory,</span>
+<span id="cb93-42"><a href="#cb93-42" aria-hidden="true"></a>    <span class="dt">full.names =</span> <span class="ot">TRUE</span>)  </span>
+<span id="cb93-43"><a href="#cb93-43" aria-hidden="true"></a>  <span class="co"># out_dir = spm_directory(spm = first_model$spmmat)</span></span>
+<span id="cb93-44"><a href="#cb93-44" aria-hidden="true"></a>}</span></code></pre></div>
 <pre><code>## # Running matlabbatch job</code></pre>
 <pre><code>## Warning in spm12_results(spm = first_model$spmmat, units = &quot;Volumetric&quot;, :
 ## Writing Images may require desktop = TRUE</code></pre>
 <pre><code>## # Creating matlabbatch job</code></pre>
-<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/spm12\n</code></pre>
-<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba0a605353.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba06fe49e79.m</code></pre>
+<pre><code>## # Adding SPMDIR: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/spm12\n</code></pre>
+<pre><code>## Running job: /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b568810297.m, which calls /var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b567319646.m</code></pre>
 <pre><code>## Command run is:</code></pre>
-<pre><code>## matlab  -nodesktop -nosplash  -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//RtmpuSoCbO/filebba0a605353.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
-<pre><code>## # Result is 0</code></pre>
+<pre><code>## matlab  -nodesktop -nosplash    -r  &quot;try, run(&#39;/var/folders/1s/wrtqcpxn685_zk570bnx9_rr0000gr/T//Rtmp58dXvT/file31b568810297.m&#39;); catch err, disp(err.message); exit(1); end; exit(0);&quot;</code></pre>
+<pre><code>## # Result is 9</code></pre>
+<pre><code>## Warning in spm12_results(spm = first_model$spmmat, units = &quot;Volumetric&quot;, :
+## Result was not zero!</code></pre>
 </div>
 <div id="bibliography" class="section level2">
 <h2>Bibliography</h2>
@@ -874,6 +939,9 @@ FWHM = \sigma \sqrt{8 \log(2)}
 </div>
 </div>
 
+
+
+<!-- code folding -->
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

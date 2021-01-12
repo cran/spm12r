@@ -4,17 +4,35 @@
 \alias{spm12_segment}
 \title{SPM12 Segment}
 \usage{
-spm12_segment(filename, set_origin = TRUE, biasreg = 0.001,
-  biasfwhm = 60, native = TRUE, dartel = FALSE, modulated = FALSE,
-  unmodulated = FALSE, bias_field = FALSE, bias_corrected = FALSE,
-  n_gaus = c(1, 1, 2, 3, 4, 2), smoothness = 0,
-  sampling_distance = 3, regularization = c(0, 0.001, 0.5, 0.05, 0.2),
-  affine = c("mni", "eastern", "subj", "none"), mrf = 1,
-  def_inverse = TRUE, def_forward = TRUE, warp_cleanup = c("light",
-  "none", "thorough"), retimg = TRUE, add_spm_dir = TRUE,
+spm12_segment(
+  filename,
+  set_origin = TRUE,
+  biasreg = 0.001,
+  biasfwhm = 60,
+  native = TRUE,
+  dartel = FALSE,
+  modulated = FALSE,
+  unmodulated = FALSE,
+  bias_field = FALSE,
+  bias_corrected = FALSE,
+  n_gaus = c(1, 1, 2, 3, 4, 2),
+  smoothness = 0,
+  sampling_distance = 3,
+  regularization = c(0, 0.001, 0.5, 0.05, 0.2),
+  affine = c("mni", "eastern", "subj", "none"),
+  mrf = 1,
+  def_inverse = TRUE,
+  def_forward = TRUE,
+  warp_cleanup = c("light", "none", "thorough"),
+  retimg = TRUE,
+  add_spm_dir = TRUE,
   spmdir = spm_dir(verbose = verbose, install_dir = install_dir),
-  clean = TRUE, verbose = TRUE, reorient = FALSE,
-  install_dir = NULL, ...)
+  clean = TRUE,
+  verbose = TRUE,
+  reorient = FALSE,
+  install_dir = NULL,
+  ...
+)
 }
 \arguments{
 \item{filename}{File to be segmented}
@@ -45,9 +63,11 @@ intensity distribution for each tissue class.  Can be 1:8 or infinity}
 
 \item{smoothness}{FWHM of smoothing done}
 
-\item{sampling_distance}{smoothingess of the warping field. 
+\item{sampling_distance}{smoothness of the warping field. 
 This is used to derive a fudge factor to account for 
-correlations between neighbouring voxels.  Smoother data have more}
+correlations between neighbouring voxels.  
+Approximate distance between sampled points when estimating 
+the model parameters.}
 
 \item{regularization}{parameters for warping regularization}
 

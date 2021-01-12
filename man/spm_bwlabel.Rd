@@ -4,10 +4,19 @@
 \alias{spm_bwlabel}
 \title{SPM BWLabel Clusters of Certain Size}
 \usage{
-spm_bwlabel(infile, outfile = NULL, retimg = TRUE, k = NULL,
-  topN = NULL, margin = NULL, binary = TRUE,
+spm_bwlabel(
+  infile,
+  outfile = NULL,
+  retimg = TRUE,
+  k = NULL,
+  topN = NULL,
+  margin = NULL,
+  binary = TRUE,
   spmdir = spm_dir(verbose = verbose, install_dir = install_dir),
-  reorient = FALSE, verbose = TRUE, install_dir = NULL)
+  reorient = FALSE,
+  verbose = TRUE,
+  install_dir = NULL
+)
 }
 \arguments{
 \item{infile}{input filename}
@@ -45,4 +54,15 @@ Get Cluster of certain size from spm_bwlabel
 \note{
 Taken from 
 http://en.wikibooks.org/wiki/SPM/How-to#How_to_remove_clusters_under_a_certain_size_in_a_binary_mask.3F
+}
+\examples{
+if (matlabr::have_matlab()) { 
+d = rep(25, 3)
+arr = array(rbinom(prod(d), size = 1, prob = 0.5), dim = d)
+nim = oro.nifti::nifti(arr)
+res = spm_bwlabel(nim, k = 1, binary = FALSE)
+tab = table(c(res))
+tab
+out_arr = as(res, "array")
+}
 }
