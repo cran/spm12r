@@ -1,7 +1,7 @@
-57c490a19fdc603a302283a02761509f *DESCRIPTION
+9bd674af272243c1fefa2b23ee0cd155 *DESCRIPTION
 488137928e963c760564b4a8d46f2cc3 *LICENCE
 31e5bfb62774fcdacb512c04d01faba4 *NAMESPACE
-cffbd6ebef3f35151e4adc4352f43a5c *NEWS.md
+e1bd01e577f33f963653bef79f451197 *NEWS.md
 d9ce9425307967949a6096f32e3c8406 *R/aaa_utils.R
 fc4509c96f521dcf7ab61b6d1ee8e784 *R/acpc_reorient.R
 2130ea7d95bea856dec297e025192727 *R/add_spm_dir.R
@@ -31,7 +31,7 @@ e9257909297f8c45998f547e99ed0212 *R/spm12_regressor.R
 ea8e9a0c63cca1149fd1ef63359d1762 *R/spm12_segment.R
 8cdb93a0afae9c12a0a4009a52476ad1 *R/spm12_slice_timing.R
 5d235d2587c3cda6735b1deb9fb1a3ee *R/spm12_smooth.R
-87002c3d50de6711358d44aa4dc174ef *R/spm_bwlabel.R
+b4da9316ef923164ab1f3fdd2e527837 *R/spm_bwlabel.R
 4ed20777e4b93d621b798f0dc6f58269 *R/spm_dir.R
 f4ef120e02ac37250847b41cad60ae16 *R/spm_probs_to_seg.R
 fa4d3a5a2e0b0d4bc1e058359d39e5c4 *R/spm_version.R
@@ -43,13 +43,13 @@ d162a7b2bfc3627fad95d6f576ca612f *build/vignette.rds
 97da2e8f1aeb17d653d8f1e87964616e *cleanup
 e5a019f32b5d4cab6aa73c80c3f3b882 *inst/doc/fmri_processing_spm12r.R
 39ca0616dc6290da472dfd3a79b1bf50 *inst/doc/fmri_processing_spm12r.Rmd
-f375ec2c98de921f567cbea803442844 *inst/doc/fmri_processing_spm12r.html
+b9741546b3b1d493504419e38336655f *inst/doc/fmri_processing_spm12r.html
 375c5b58cc4734ae304866f2c5c3dcd3 *inst/doc/fmri_task_processing.R
 1121d678a486126ce40203d253325595 *inst/doc/fmri_task_processing.Rmd
-6e7fa17bf6b8717b77e4034f47199778 *inst/doc/fmri_task_processing.html
+f758621f9d242e0cd8ba08c9ca81db02 *inst/doc/fmri_task_processing.html
 13625a4d402f78381b1a28f4bb4d0f51 *inst/doc/fmri_task_processing_acpc.R
 6e1d32b69a00c78dfa3f899b6ff1bb94 *inst/doc/fmri_task_processing_acpc.Rmd
-86b6807bad361c225912102b10068c9d *inst/doc/fmri_task_processing_acpc.html
+bbdc77699001d0135777d8dcc71b76b6 *inst/doc/fmri_task_processing_acpc.html
 b15d4f8e4b01cea262a6a8d8a088cb4b *inst/scripts/Coregister_job.m
 b15d4f8e4b01cea262a6a8d8a088cb4b *inst/scripts/Coregistration_job.m
 af7af3f4c636e39c27231cc36eb440a5 *inst/scripts/Executable.m
@@ -96,7 +96,7 @@ dde97746f812e00208f0c580de76513c *man/spm12_realign.deprecated.Rd
 10ccbc0d473fbf9048bc47396c8af089 *man/spm12_slice_timing.Rd
 6968340d8f00814ad37eeac0740e9f37 *man/spm12_slice_timing.deprecated.Rd
 f7ee8cca320eb372fc6797e26f9c773d *man/spm12_smooth.Rd
-2543a043ddb4b1acb0681d0fa4597ca9 *man/spm_bwlabel.Rd
+4f311c748d8c53639aa4ea5f316d027b *man/spm_bwlabel.Rd
 a54afb8db18b6aba7c35b41fc4dd9547 *man/spm_dir.Rd
 d2c29f2e2d8d37ac8e11b04937f6b0b1 *man/spm_directory.Rd
 62a17d608478a7d78baed324b709a32f *man/spm_probs_to_seg.Rd
